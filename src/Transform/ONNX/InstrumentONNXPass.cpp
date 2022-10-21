@@ -121,6 +121,7 @@ public:
   }
 
   void runOnOperation() override {
+    llvm::outs() << "Enter instrumentONNXPass\n";
     if (instrumentONNXOps == "" || instrumentONNXOps == "NONE")
       return;
     init(instrumentONNXOps);

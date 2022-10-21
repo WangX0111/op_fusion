@@ -88,3 +88,16 @@ add_onnx_mlir_library(OMONNXSimplifyShapeRelatedOps
   MLIRPass
   MLIRTransforms
   )
+
+
+add_onnx_mlir_library(OMOpFusion
+  OpFusionPass.cpp
+  OpFusion.cpp
+
+  LINK_LIBS PUBLIC
+  OMONNXOps
+  OMCost
+  OMLog
+  MLIRFuncDialect
+  MLIRPass
+)

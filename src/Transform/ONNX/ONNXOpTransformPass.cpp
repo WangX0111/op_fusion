@@ -165,6 +165,8 @@ void ONNXOpTransformPass::runOnOperation() {
                  << " times, converged "
                  << ((currentTag == previousTag) ? "true" : "false") << "\n";
   }
+  OpPassManager dynamicPM("builtin.module", OpPassManager::Nesting::Implicit);
+  dynamicPM.addPass(onnx_mlir::createOpFusionPass());
 }
 
 } // end anonymous namespace

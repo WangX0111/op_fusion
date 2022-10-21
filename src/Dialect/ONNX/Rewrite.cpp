@@ -554,6 +554,8 @@ public:
 /// on the ONNXAddOp.
 void ONNXAddOp::getCanonicalizationPatterns(
     RewritePatternSet &results, MLIRContext *context) {
+  // llvm::outs() << "Enter Rewrite.cpp ONNXAddOp\n";
+
   results.insert<NormalizeAddPattern>(context);
   results.insert<MulAddToGemmOptPattern>(context);
   results.insert<FuseGemmFollowedByAddition>(context);
@@ -564,12 +566,16 @@ void ONNXAddOp::getCanonicalizationPatterns(
 /// on the ONNXDimOp.
 void ONNXDimOp::getCanonicalizationPatterns(
     RewritePatternSet &results, MLIRContext *context) {
+  // llvm::outs() << "Enter Rewrite.cpp ONNXDimOp\n";
+
   results.insert<DimOpToConstantPattern>(context);
 }
 
 /// on the ONNXMulOp.
 void ONNXMulOp::getCanonicalizationPatterns(
     RewritePatternSet &results, MLIRContext *context) {
+  // llvm::outs() << "Enter Rewrite.cpp ONNXMulOp\n";
+
   results.insert<NormalizeMulPattern>(context);
   results.insert<FuseMulConvNullBiasPattern>(context);
 }

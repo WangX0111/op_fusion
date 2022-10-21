@@ -2,6 +2,11 @@
 cmake-*/
 CMakePresets.json
 
+# ONNX
+*.mlir
+*.so
+*.temp
+
 # Prerequisites
 *.d
 

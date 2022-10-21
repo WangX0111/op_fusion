@@ -32,3 +32,5 @@ add_onnx_mlir_library(OMMlirUtilities
   LINK_LIBS PUBLIC
   MLIRIR
   )
+
+add_subdirectory(Log)

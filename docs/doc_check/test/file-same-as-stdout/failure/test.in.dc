@@ -1,1 +1,0 @@
-file-same-as-stdout({"file": "test.in", "cmd": ["echo", "'cat'"]})

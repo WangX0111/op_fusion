@@ -5,6 +5,8 @@ cmake_minimum_required(VERSION 3.13.4)
 
 project(onnx-mlir)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 option(ONNX_MLIR_BUILD_TESTS "Build ONNX-MLIR test executables. If OFF, just generate build targets." ON)
 option(ONNX_MLIR_CCACHE_BUILD "Set to ON for a ccache enabled build." OFF)
 option(ONNX_MLIR_ENABLE_MHLO "Enable MHLO support." ON)
@@ -182,11 +184,11 @@ if (ONNX_MLIR_SUPPRESS_THIRD_PARTY_WARNINGS)
 endif()
 
 if (ONNX_MLIR_ENABLE_MHLO)
-  add_compile_definitions(ONNX_MLIR_ENABLE_MHLO)
+  # add_compile_definitions(ONNX_MLIR_ENABLE_MHLO)
 endif()
 
 add_subdirectory(utils)
 add_subdirectory(include)
 add_subdirectory(src)
-add_subdirectory(docs)
-add_subdirectory(test)
+# add_subdirectory(docs)
+# add_subdirectory(test)
