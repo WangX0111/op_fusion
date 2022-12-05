@@ -161,6 +161,7 @@ enum InstrumentActions {
 };
 
 void OMInstrumentInit() {
+  printf("OMInstrumentInit");
   if (getenv("NOOMINSTRUMENTTIME")) {
     instrumentReportTimeDisabled = true;
   }

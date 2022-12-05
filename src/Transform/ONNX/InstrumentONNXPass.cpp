@@ -121,7 +121,7 @@ public:
   }
 
   void runOnOperation() override {
-    llvm::outs() << "Enter instrumentONNXPass\n";
+    //llvm::outs() << "Enter instrumentONNXPass: " << instrumentONNXOps << "\n";
     if (instrumentONNXOps == "" || instrumentONNXOps == "NONE")
       return;
     init(instrumentONNXOps);
@@ -133,14 +133,21 @@ public:
         const char *opName = op->getName().getStringRef().data() + 5;
         if (!allOpsAllowed && allowedOps.find(opName) == allowedOps.end())
           return;
+        llvm::outs() << "opname:" << opName << "\n";
+        
 
         Location loc = op->getLoc();
         OpBuilder opBuilder(op);
-        if (instrumentBefore)
+        if (instrumentBefore){
+          llvm::outs() << "Enter instrumentBefore\n";
+
           opBuilder.create<mlir::KrnlInstrumentOp>(loc, op, beforeTag());
+        }
 
         // Can not insert after Op (e.g. ONNXReturnOP) with IsTerminator Trait
         if (instrumentAfter && !op->hasTrait<OpTrait::IsTerminator>()) {
+          llvm::outs() << "Enter instrumentAfter\n";
+
           opBuilder.setInsertionPointAfter(op);
           opBuilder.create<mlir::KrnlInstrumentOp>(loc, op, afterTag());
         }

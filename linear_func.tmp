@@ -1,7 +1,8 @@
 module attributes {llvm.data_layout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128", llvm.target_triple = "x86_64-apple-darwin21.4.0"} {
   func.func @main_graph(%arg0: tensor<10x10xf32>, %arg1: tensor<10x10xf32>, %arg2: tensor<10x10xf32>) -> tensor<10x10xf32> attributes {input_names = ["a", "x", "b"], output_names = ["output"]} {
-    %0 = "onnx.Gemm"(%arg0, %arg1, %arg2) {alpha = 1.000000e+00 : f32, beta = 1.000000e+00 : f32, transA = 0 : si64, transB = 0 : si64} : (tensor<10x10xf32>, tensor<10x10xf32>, tensor<10x10xf32>) -> tensor<10x10xf32>
-    return %0 : tensor<10x10xf32>
+    %0 = "onnx.MatMul"(%arg0, %arg1) : (tensor<10x10xf32>, tensor<10x10xf32>) -> tensor<*xf32>
+    %1 = "onnx.Add"(%0, %arg2) : (tensor<*xf32>, tensor<10x10xf32>) -> tensor<10x10xf32>
+    return %1 : tensor<10x10xf32>
   }
   "onnx.EntryPoint"() {func = @main_graph} : () -> ()
 }

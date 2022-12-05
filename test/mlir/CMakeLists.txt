@@ -56,14 +56,14 @@ set(ONNX_MLIR_TEST_DEPENDS
   llvm-dis
   )
 
-add_lit_testsuite(check-onnx-lit
-                  "Running the ONNX-MLIR regression tests"
-                  ${CMAKE_CURRENT_BINARY_DIR}
-                  DEPENDS
-                  ${ONNX_MLIR_TEST_DEPENDS})
-set_target_properties(check-onnx-lit PROPERTIES FOLDER "Tests")
+# add_lit_testsuite(check-onnx-lit
+#                   "Running the ONNX-MLIR regression tests"
+#                   ${CMAKE_CURRENT_BINARY_DIR}
+#                   DEPENDS
+#                   ${ONNX_MLIR_TEST_DEPENDS})
+# set_target_properties(check-onnx-lit PROPERTIES FOLDER "Tests")
 
-add_lit_testsuites(ONNX_MLIR
-                   ${CMAKE_CURRENT_SOURCE_DIR}
-                   DEPENDS
-                   ${ONNX_MLIR_TEST_DEPENDS})
+# add_lit_testsuites(ONNX_MLIR
+#                    ${CMAKE_CURRENT_SOURCE_DIR}
+#                    DEPENDS
+#                    ${ONNX_MLIR_TEST_DEPENDS})

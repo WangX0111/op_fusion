@@ -76,7 +76,7 @@ public:
 private:
   void SetTI(mlir::OpBuilder &builder,
       std::vector<Operation *> &ops, const TISetT &TI_set) {
-    SetDefaultTI(builder, ops, TI_set);
+    SetDefaultTransformationImpedance(builder, ops, TI_set);
     // fusion Strategy
     
   }

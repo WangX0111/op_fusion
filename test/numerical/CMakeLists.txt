@@ -63,20 +63,20 @@ add_numerical_unittest(TestGemm
   LINK_LIBS PRIVATE ${TEST_LINK_LIBS}
   )
 
-add_numerical_unittest(TestLSTM
-  TestLSTM.cpp
-  LINK_LIBS PRIVATE ${TEST_LINK_LIBS}
-  )
+# add_numerical_unittest(TestLSTM
+#   TestLSTM.cpp
+#   LINK_LIBS PRIVATE ${TEST_LINK_LIBS}
+#   )
 
-add_numerical_unittest(TestRNN
-  TestRNN.cpp
-  LINK_LIBS PRIVATE ${TEST_LINK_LIBS}
-  )
+# add_numerical_unittest(TestRNN
+#   TestRNN.cpp
+#   LINK_LIBS PRIVATE ${TEST_LINK_LIBS}
+#   )
 
-add_numerical_unittest(TestGRU
-  TestGRU.cpp
-  LINK_LIBS PRIVATE ${TEST_LINK_LIBS}
-  )
+# add_numerical_unittest(TestGRU
+#   TestGRU.cpp
+#   LINK_LIBS PRIVATE ${TEST_LINK_LIBS}
+#   )
 
 add_numerical_unittest(TestLoop
   TestLoop.cpp
