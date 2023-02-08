@@ -1,0 +1,1 @@
+bin/mlir-opt -hopt  -convert-linalg-to-loops -lower-affine -convert-scf-to-std -convert-memref-to-llvm='use-aligned-alloc=1' -convert-std-to-llvm ../mlir/benchmark/test.mlir 
