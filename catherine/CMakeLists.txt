@@ -31,8 +31,8 @@ add_definitions(${LLVM_DEFINITIONS})
 
 
 add_subdirectory(include)
-add_subdirectory(lib)
-add_subdirectory(opt)
+add_subdirectory(src)
+# add_subdirectory(test)
 
 # set(LLVM_LINK_COMPONENTS
 #   Core

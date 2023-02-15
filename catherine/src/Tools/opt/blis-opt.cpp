@@ -11,8 +11,8 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
 
-#include "Blis/BlisDialect.h"
-#include "Blis/BlisOpsDialect.cpp.inc"
+#include "../../Dialect/Blis/BlisDialect.h"
+#include "src/Dialect/Blis/BlisOpsDialect.cpp.inc"
 
 int main(int argc, char **argv) {
   mlir::registerAllPasses();

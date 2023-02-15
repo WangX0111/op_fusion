@@ -5,7 +5,7 @@
 #define BLIS_OPS
 
 include "BlisDialect.td"
-include "/mlir/Interfaces/InferTypeOpInterface.td"
+include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
 def Blis_MatmulOp : Blis_Op<"matmul"> {

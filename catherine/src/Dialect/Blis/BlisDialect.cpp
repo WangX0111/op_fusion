@@ -1,5 +1,5 @@
-#include "Blis/BlisDialect.h"
-#include "Blis/BlisOps.h"
+#include "BlisDialect.h"
+#include "BlisOps.h"
 
 using namespace mlir;
 using namespace catherine::blis;
@@ -11,6 +11,6 @@ using namespace catherine::blis;
 void BlisDialect::initialize() {
   addOperations<
 #define GET_OP_LIST
-#include "Blis/BlisOps.cpp.inc"
+#include "src/Dialect/Blis/BlisOps.cpp.inc"
       >();
 }

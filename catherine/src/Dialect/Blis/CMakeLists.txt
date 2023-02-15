@@ -9,3 +9,17 @@
 add_mlir_dialect(BlisOps blis)
 # add_mlir_doc(BlisDialect -gen-dialect-doc BlisDialect Blis/)
 # add_mlir_doc(BlisOps -gen-op-doc BlisOps Blis/)
+
+add_mlir_dialect_library(MLIRBlis
+    BlisDialect.cpp
+    BlisOps.cpp
+
+   
+
+    DEPENDS
+    MLIRBlisOpsIncGen
+
+	LINK_LIBS PUBLIC
+	MLIRIR
+    MLIRInferTypeOpInterface
+	)

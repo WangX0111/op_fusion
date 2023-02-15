@@ -3,6 +3,6 @@
 
 #include "mlir/IR/Dialect.h"
 
-#include "Blis/BlisOpsDialect.h.inc"
+#include "src/Dialect/Blis/BlisOpsDialect.h.inc"
 
 #endif // BLIS_BLISDIALECT_H

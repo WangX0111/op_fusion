@@ -9,6 +9,6 @@
 
 
 #define GET_OP_CLASSES
-#include "Blis/BlisOps.h.inc"
+#include "src/Dialect/Blis/BlisOps.h.inc"
 
 #endif // BLIS_BLISOPS_H
