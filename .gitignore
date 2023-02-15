@@ -26,6 +26,7 @@
 
 # Nested build directory
 /build*
+/catherin/build*
 
 #==============================================================================#
 # Explicit files to ignore (only matches one).
