@@ -3,6 +3,8 @@
 
 using namespace mlir;
 using namespace catherine::blis;
+#include "Blis/BlisOpsDialect.cpp.inc"
+
 
 //===----------------------------------------------------------------------===//
 // Blis dialect.
@@ -11,6 +13,6 @@ using namespace catherine::blis;
 void BlisDialect::initialize() {
   addOperations<
 #define GET_OP_LIST
-#include "src/Dialect/Blis/BlisOps.cpp.inc"
+#include "Blis/BlisOps.cpp.inc"
       >();
 }

@@ -14,10 +14,8 @@ add_mlir_dialect_library(MLIRBlis
     BlisDialect.cpp
     BlisOps.cpp
 
-   
-
-    DEPENDS
-    MLIRBlisOpsIncGen
+    # DEPENDS
+    # MLIRBlisOpsIncGen
 
 	LINK_LIBS PUBLIC
 	MLIRIR
