@@ -9,6 +9,7 @@ set(LIBS
         ${conversion_libs}
         MLIROptLib
         MLIRBlis
+        MatMulOptimization
         )
 add_llvm_executable(blis-opt blis-opt.cpp)
 

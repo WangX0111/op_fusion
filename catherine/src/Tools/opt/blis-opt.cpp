@@ -11,14 +11,29 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
 
-#include "../../Dialect/Blis/BlisDialect.h"
-#include "src/Dialect/Blis/BlisOpsDialect.cpp.inc"
+#include "Blis/BlisDialect.h"
+#include "Blis/BlisOps.h"
+// #include "Blis/BlisOpsDialect.cpp.inc"
+
+namespace catherine{
+namespace blis{
+  void registerMatMulOptimizePass();
+}
+}
 
 int main(int argc, char **argv) {
+  // Register all MLIR passes.
   mlir::registerAllPasses();
-  // TODO: Register Blis passes here.
+  // Register Vectorization of Convolution.
+  // Register Vectorization of Pooling.
+  // Register Several Optimize Pass.
+  catherine::blis::registerMatMulOptimizePass();
 
   mlir::DialectRegistry registry;
+  // Register all MLIR core dialects.
+  registerAllDialects(registry);
+  // Register dialects in project.
+  // clang-format off
   registry.insert<catherine::blis::BlisDialect>();
   registry.insert<mlir::func::FuncDialect>();
   registry.insert<mlir::arith::ArithDialect>();
