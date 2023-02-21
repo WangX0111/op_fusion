@@ -1,6 +1,6 @@
 //===- MatMulOptimize.cpp -------------------------------------------------===//
 //
-// This file implements the matmul optimization.
+//  该文件实现了一个基于BLIS的matmul优化。
 //
 //===----------------------------------------------------------------------===//
 
@@ -12,7 +12,12 @@
 #include <mlir/IR/TypeUtilities.h>
 #include <mlir/IR/Value.h>
 #include <mlir/Pass/Pass.h>
+#include "llvm/Support/Debug.h"
+#include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include "Blis/BlisOps.h"
+
+#define DEBUG_TYPE "hopt"
 using namespace mlir;
 using namespace vector;
 
@@ -21,15 +26,12 @@ using namespace vector;
 //===----------------------------------------------------------------------===//
 
 namespace {
-
+// Matmul will be lowered to vector and affine expressions
 class MatMulOptimizePattern : public ConversionPattern {
 public:
-  explicit MatMulOptimizePattern(MLIRContext *context, int64_t vecSizeParam,
-                                 int64_t kernelMParam, int64_t kernelNParam)
-      : ConversionPattern(linalg::MatmulOp::getOperationName(), 1, context) {
-    vecSize = vecSizeParam;
-    kernelM = kernelMParam;
-    kernelN = kernelNParam;
+  explicit MatMulOptimizePattern(MLIRContext *context)
+      : ConversionPattern(catherine::blis::BlisMatmulOp::getOperationName(), 1, context) {
+
   }
 
   LogicalResult
@@ -41,147 +43,29 @@ public:
     Value A = op->getOperand(0);
     Value B = op->getOperand(1);
     Value C = op->getOperand(2);
-    // Get shape of input and output
-    ShapedType ATy = A.getType().cast<ShapedType>();
-    // ShapedType BTy = B.getType().cast<ShapedType>();
-    // ShapedType CTy = C.getType().cast<ShapedType>();
 
-    // Some constants.
-    const Value c0 =
-        rewriter.create<arith::ConstantOp>(loc, rewriter.getIndexAttr(0));
-    const Value c1 =
-        rewriter.create<arith::ConstantOp>(loc, rewriter.getIndexAttr(1));
-    const AffineExpr s0 = rewriter.getAffineSymbolExpr(0);
-    const AffineExpr s1 = rewriter.getAffineSymbolExpr(1);
-    const AffineExpr d0 = rewriter.getAffineDimExpr(0);
-    const AffineExpr d1 = rewriter.getAffineDimExpr(1);
-    const AffineMap mapBroadcast =
-        AffineMap::get(2, 0, rewriter.getAffineConstantExpr(0));
-    const VectorType vTy = VectorType::get(16, ATy.getElementType());
-
-    // Configs
-    int64_t kNLen = vecSize * kernelN;
-
-    // Dims
-    Value M = rewriter.create<memref::DimOp>(loc, A, 0);
-    Value N = rewriter.create<memref::DimOp>(loc, B, 1);
-    Value K = rewriter.create<memref::DimOp>(loc, A, 1);
-
-    // build loop body
-    buildAffineLoopNest(
-        rewriter, loc, {c0}, {N}, kNLen,
-        [&](OpBuilder &builder, Location loc, ValueRange ivRange) {
-          auto ivJ = ivRange.front();
-          buildAffineLoopNest(
-              builder, loc, {c0}, {M}, kernelM,
-              [&](OpBuilder &builder, Location loc, ValueRange ivRange) {
-                Value ivI = ivRange.front();
-                SmallVector<memref::SubViewOp> aptrs;
-                SmallVector<memref::SubViewOp> cptrs;
-                for (int i = 0; i < kernelM; ++i) {
-                  Value fixedIV = ivI;
-                  if (i != 0) {
-                    fixedIV = builder.create<AffineMinOp>(
-                        loc,
-                        AffineMap::get(1, 1, {d0 + i, s0 - 1},
-                                       builder.getContext()),
-                        SmallVector<Value>{ivI, M});
-                  }
-                  MemRefType resTy =
-                      MemRefType::get(ATy.getShape(), ATy.getElementType(),
-                                      AffineMap::get(2, 2, d0 * s1 + s0 + d1));
-                  auto aptr = builder.create<memref::SubViewOp>(
-                      loc, resTy, A, SmallVector<OpFoldResult>{fixedIV, c0},
-                      SmallVector<OpFoldResult>{c1, K},
-                      SmallVector<OpFoldResult>{c1, c1});
-                  aptrs.push_back(aptr);
-                }
-                for (int i = 0; i < kernelM; ++i) {
-                  Value fixedIV = builder.create<AffineMinOp>(
-                      loc,
-                      AffineMap::get(1, 1, {d0 + i, s0 - 1},
-                                     builder.getContext()),
-                      SmallVector<Value>{ivI, M});
-                  MemRefType resTy =
-                      MemRefType::get(ATy.getShape(), ATy.getElementType(),
-                                      AffineMap::get(2, 2, d0 * s1 + s0 + d1));
-                  auto cptr = builder.create<memref::SubViewOp>(
-                      loc, resTy, C, SmallVector<OpFoldResult>{fixedIV, c0},
-                      SmallVector<OpFoldResult>{c1, N},
-                      SmallVector<OpFoldResult>{c1, c1});
-                  cptrs.push_back(cptr);
-                }
-                buildAffineLoopNest(
-                    builder, loc, {c0}, {K}, 1,
-                    [&](OpBuilder &builder, Location loc, ValueRange ivRange) {
-                      Value ivK = ivRange.front();
-                      SmallVector<Value> as;
-                      SmallVector<Value> bs;
-                      for (int i = 0; i < kernelM; ++i) {
-                        Value a = builder.create<TransferReadOp>(
-                            loc, vTy, aptrs[i], ValueRange{c0, ivK},
-                            mapBroadcast);
-                        as.push_back(a);
-                      }
-                      SmallVector<Value> ds;
-                      for (int i = 0; i < kernelM; ++i) {
-                        Value c = cptrs[i];
-                        for (int j = 0; j < kernelN; ++j) {
-                          Value fixedIV = builder.create<AffineApplyOp>(
-                              loc, AffineMap::get(1, 0, d0 + j * vecSize), ivJ);
-                          Value d = builder.create<TransferReadOp>(
-                              loc, vTy, c, ValueRange{c0, fixedIV});
-                          ds.push_back(d);
-                        }
-                      }
-                      for (int i = 0; i < kernelN; ++i) {
-                        Value fixedIV = ivJ;
-                        if (i != 0) {
-                          fixedIV = builder.create<AffineApplyOp>(
-                              loc, AffineMap::get(1, 0, d0 + i * vecSize), ivJ);
-                        }
-                        Value b = builder.create<TransferReadOp>(
-                            loc, vTy, B, ValueRange{ivK, fixedIV});
-                        bs.push_back(b);
-                      }
-
-                      for (int i = 0; i < kernelM; ++i) {
-                        for (int j = 0; j < kernelN; ++j) {
-                          ds[i * kernelN + j] = builder.create<vector::FMAOp>(
-                              loc, vTy, as[i], bs[j], ds[i * kernelN + j]);
-                        }
-                      }
-
-                      for (int i = 0; i < kernelM; ++i) {
-                        for (int j = 0; j < kernelN; ++j) {
-                          Value fixedIV = builder.create<AffineApplyOp>(
-                              loc, AffineMap::get(1, 0, d0 + j * vecSize), ivJ);
-                          builder.create<TransferWriteOp>(
-                              loc, ds[i * kernelN + j], cptrs[i],
-                              ValueRange{c0, fixedIV});
-                        }
-                      }
-                    });
-              });
-        });
-
-    rewriter.eraseOp(op);
+    auto matmulOp = cast<catherine::blis::BlisMatmulOp>(op);
+    catherine::blis::BlisMatmulOpAdaptor operandAdaptor(matmulOp);
+    LLVM_DEBUG(llvm::dbgs()
+               <<"matmul op:"<<matmulOp<< "\n");
+    // rewriter.eraseOp(op);
     return success();
   }
 
 private:
-  int64_t vecSize;
-  int64_t kernelM;
-  int64_t kernelN;
+
 };
 } // end anonymous namespace
 
 //===----------------------------------------------------------------------===//
 // MatMulOptimizePass
+// PassWrapper 是一个模板类，它可以将一个继承自 OperationPass 的类包装成一个可以注册到 PassManager 中的 OpPass。
+// 使用 PassWrapper 可以使得我们更方便地注册一个 OperationPass，并将其作为一个 OpPass 运行。
 //===----------------------------------------------------------------------===//
 
 /// This is a partial lowering linalg pooling operations to mixture of
-/// Affine + Vector operations.
+/// Affine + Vector operations. 
+
 namespace {
 class MatMulOptimizePass
     : public PassWrapper<MatMulOptimizePass, OperationPass<ModuleOp>> {
@@ -191,32 +75,22 @@ public:
   StringRef getDescription() const final { return "MatMul Optimization."; }
   MatMulOptimizePass() = default;
   MatMulOptimizePass(const MatMulOptimizePass &) {}
-  explicit MatMulOptimizePass(int64_t vecSizeParam, int64_t kernelMParam,
-                              int64_t kernelNParam) {
-    vecSize = vecSizeParam;
-    kernelM = kernelMParam;
-    kernelN = kernelNParam;
-  }
+  // explicit MatMulOptimizePass(int64_t vecSizeParam, int64_t kernelMParam,
+  //                             int64_t kernelNParam) {
+  //   vecSize = vecSizeParam;
+  //   kernelM = kernelMParam;
+  //   kernelN = kernelNParam;
+  // }
 
   void runOnOperation() override;
 
   void getDependentDialects(DialectRegistry &registry) const override {
-    registry.insert<linalg::LinalgDialect, scf::SCFDialect, AffineDialect,
-                    VectorDialect>();
+    registry.insert<linalg::LinalgDialect, scf::SCFDialect, AffineDialect, VectorDialect
+                    // , BlisDialect
+                    >();
   }
 
-  Option<int64_t> vecSize{*this, "vec-size",
-                          llvm::cl::desc("Strip mining size."),
-                          llvm::cl::init(16)};
-
-  Option<int64_t> kernelM{*this, "kernel-m",
-                          llvm::cl::desc("Strip mining size."),
-                          llvm::cl::init(4)};
-
-  Option<int64_t> kernelN{*this, "kernel-n",
-                          llvm::cl::desc("Strip mining size."),
-                          llvm::cl::init(2)};
-};
+  };
 } // end anonymous namespace.
 
 void MatMulOptimizePass::runOnOperation() {
@@ -231,7 +105,8 @@ void MatMulOptimizePass::runOnOperation() {
   target.addLegalOp<linalg::FillOp>();
 
   RewritePatternSet patterns(context);
-  patterns.add<MatMulOptimizePattern>(context, vecSize, kernelM, kernelN);
+  patterns.add<MatMulOptimizePattern>(context);
+  // patterns.add<MatMulOptimizePattern>(context, vecSize, kernelM, kernelN);
 
   if (failed(applyPartialConversion(module, target, std::move(patterns))))
     signalPassFailure();

@@ -8,7 +8,7 @@ include "BlisDialect.td"
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
-def Blis_MatmulOp : Blis_Op<"matmul"> {
+def BlisMatmulOp : Blis_Op<"matmul"> {
     let summary = "Illustrates how to define an operation.";
     let description = [{
         The "mul" operation performs element-wise multiplication between two
