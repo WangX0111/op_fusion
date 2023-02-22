@@ -14,23 +14,25 @@
 #include <mlir/Pass/Pass.h>
 #include "llvm/Support/Debug.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+// #include "mlir/IR/Types.h"
+// #include "mlir/IR/StandardTypes.h"
+
 
 #include "Blis/BlisOps.h"
 
-#define DEBUG_TYPE "hopt"
+#define DEBUG_TYPE "kate"
 using namespace mlir;
 using namespace vector;
 
 //===----------------------------------------------------------------------===//
 // Rewrite Pattern
-// Optimize matmul nest with vectorization, packing, and register tiling.
 //===----------------------------------------------------------------------===//
 
 namespace {
-// Matmul will be lowered to vector and affine expressions
-class MatMulOptimizePattern : public ConversionPattern {
+// Matmul will be lowered to vector and affine expressions, but now only change the info
+class KrnlMatMulLoweringPattern : public ConversionPattern {
 public:
-  explicit MatMulOptimizePattern(MLIRContext *context)
+  explicit KrnlMatMulLoweringPattern(MLIRContext *context)
       : ConversionPattern(catherine::blis::BlisMatmulOp::getOperationName(), 1, context) {
 
   }
@@ -50,12 +52,27 @@ public:
     llvm::outs()<<"Value A:"<<A<< "\n";
     Value B = op->getOperand(1);
     // Value C = op->getOperand(2);
-    Type elementType =
-        operandAdaptor.A().getType().cast<MemRefType>().getElementType();
+    // Type elementType =
+    //     operandAdaptor.A().getType().cast<MemRefType>().getElementType();
     // Init scope and emit constants.
     Location loc = matmulOp.getLoc();
 
     // Gather A, B, C tile sizes.
+    // SmallVector<IndexExpr, 2> aTileSize, bTileSize;
+    // Value A(operandAdaptor.A()), B(operandAdaptor.B());
+
+    matmulOp->dump();
+    // Get the two dimensions of the matmul operation.
+    auto lhsShape = matmulOp.getOperand(0).getType().cast<ShapedType>().getShape();
+    auto rhsShape = matmulOp.getOperand(1).getType().cast<ShapedType>().getShape();
+    auto resShape = matmulOp.getResult().getType().cast<ShapedType>().getShape();
+    int64_t m = lhsShape[0];
+    int64_t k = lhsShape[1];
+    int64_t n = rhsShape[1];
+
+    // Create the size information as a string attribute.
+    std::string sizeInfoStr = std::to_string(m) + "x" + std::to_string(k) + "x" + std::to_string(n);
+    auto sizeInfoAttr = StringAttr::get(matmulOp.getContext(), sizeInfoStr);
 
     // Tile sizes for A/B/C are determined by their memref unless explicitly
     // specified by an optional argument. That allows A/B/C memrefs to be
@@ -66,7 +83,14 @@ public:
     // sub-tiled, the default size can be overridden from the tile sizes using
     // the computeTileSize attribute. Tiles may not be full if they are at the
     // outer boundaries of the original data.
+    matmulOp.getOperation()->setAttr("M_C", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 330));
+    matmulOp.getOperation()->setAttr("N_C", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 2048));
+    matmulOp.getOperation()->setAttr("K_C", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 480));
+    matmulOp.getOperation()->setAttr("M_R", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 3));
+    matmulOp.getOperation()->setAttr("N_R", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 16));
+    matmulOp.getOperation()->setAttr("K_U", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 4));
 
+    matmulOp.dump();
     // Get the global upper bound of the original computations.
 
     // Has a matrix times vector when the J upper bound is literal 1.
@@ -104,20 +128,14 @@ private:
 /// Affine + Vector operations. 
 
 namespace {
-class MatMulOptimizePass
-    : public PassWrapper<MatMulOptimizePass, OperationPass<ModuleOp>> {
+class KrnlMatMulLoweringPass
+    : public PassWrapper<KrnlMatMulLoweringPass, OperationPass<ModuleOp>> {
 public:
-  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(MatMulOptimizePass)
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(KrnlMatMulLoweringPass)
   StringRef getArgument() const final { return "hopt"; }
   StringRef getDescription() const final { return "MatMul Optimization."; }
-  MatMulOptimizePass() = default;
-  MatMulOptimizePass(const MatMulOptimizePass &) {}
-  // explicit MatMulOptimizePass(int64_t vecSizeParam, int64_t kernelMParam,
-  //                             int64_t kernelNParam) {
-  //   vecSize = vecSizeParam;
-  //   kernelM = kernelMParam;
-  //   kernelN = kernelNParam;
-  // }
+  KrnlMatMulLoweringPass() = default;
+  KrnlMatMulLoweringPass(const KrnlMatMulLoweringPass &) {}
 
   void runOnOperation() override;
 
@@ -130,7 +148,7 @@ public:
   };
 } // end anonymous namespace.
 
-void MatMulOptimizePass::runOnOperation() {
+void KrnlMatMulLoweringPass::runOnOperation() {
   MLIRContext *context = &getContext();
   ModuleOp module = getOperation();
 
@@ -142,7 +160,7 @@ void MatMulOptimizePass::runOnOperation() {
   target.addLegalOp<linalg::FillOp>();
 
   RewritePatternSet patterns(context);
-  patterns.add<MatMulOptimizePattern>(context);
+  patterns.add<KrnlMatMulLoweringPattern>(context);
   // patterns.add<MatMulOptimizePattern>(context, vecSize, kernelM, kernelN);
 
   if (failed(applyPartialConversion(module, target, std::move(patterns))))
@@ -151,6 +169,6 @@ void MatMulOptimizePass::runOnOperation() {
 
 namespace catherine {
 namespace blis {
-void registerMatMulOptimizePass() { PassRegistration<MatMulOptimizePass>(); }
+void registerKrnlMatMulLoweringPass() { PassRegistration<KrnlMatMulLoweringPass>(); }
 } // namespace buddy
 } // namespace mlir

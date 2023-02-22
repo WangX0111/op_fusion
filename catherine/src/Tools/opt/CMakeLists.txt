@@ -9,8 +9,8 @@ set(LIBS
         ${conversion_libs}
         MLIROptLib
         MLIRBlis
-        # MatMulOptimization
-        KateTransforms
+        KateKrnlToAffine
+        # KateTransforms
         )
 add_llvm_executable(blis-opt blis-opt.cpp)
 

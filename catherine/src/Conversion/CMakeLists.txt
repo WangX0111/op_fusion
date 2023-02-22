@@ -1,3 +1,1 @@
-add_mlir_library(MatMulOptimization
-	MatMulOptimize.cpp
-  )
+add_subdirectory(KrnlToAffine)
