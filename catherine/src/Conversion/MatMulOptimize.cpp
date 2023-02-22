@@ -23,6 +23,7 @@ using namespace vector;
 
 //===----------------------------------------------------------------------===//
 // Rewrite Pattern
+// Optimize matmul nest with vectorization, packing, and register tiling.
 //===----------------------------------------------------------------------===//
 
 namespace {
@@ -37,17 +38,53 @@ public:
   LogicalResult
   matchAndRewrite(Operation *op, ArrayRef<Value> /*operands*/,
                   ConversionPatternRewriter &rewriter) const override {
-    auto loc = op->getLoc();
+    auto matmulOp = cast<catherine::blis::BlisMatmulOp>(op);
+    llvm::outs()<<"casted matmul op:"<<matmulOp<< "\n";
+    catherine::blis::BlisMatmulOpAdaptor operandAdaptor(matmulOp);
 
+    // Option.
+
+    // Operands and types.
     // Get input A, B, C.
     Value A = op->getOperand(0);
+    llvm::outs()<<"Value A:"<<A<< "\n";
     Value B = op->getOperand(1);
-    Value C = op->getOperand(2);
+    // Value C = op->getOperand(2);
+    Type elementType =
+        operandAdaptor.A().getType().cast<MemRefType>().getElementType();
+    // Init scope and emit constants.
+    Location loc = matmulOp.getLoc();
 
-    auto matmulOp = cast<catherine::blis::BlisMatmulOp>(op);
-    catherine::blis::BlisMatmulOpAdaptor operandAdaptor(matmulOp);
-    LLVM_DEBUG(llvm::dbgs()
-               <<"matmul op:"<<matmulOp<< "\n");
+    // Gather A, B, C tile sizes.
+
+    // Tile sizes for A/B/C are determined by their memref unless explicitly
+    // specified by an optional argument. That allows A/B/C memrefs to be
+    // padded if needed for SIMD/unroll and jam, for example.
+
+    // Gather N, M, K compute tile size. This is the size of the computations,
+    // if the tile is full. Because computation in the buffers could be further
+    // sub-tiled, the default size can be overridden from the tile sizes using
+    // the computeTileSize attribute. Tiles may not be full if they are at the
+    // outer boundaries of the original data.
+
+    // Get the global upper bound of the original computations.
+
+    // Has a matrix times vector when the J upper bound is literal 1.
+
+    // Investigate SIMD
+    // Assume no simd.
+
+    // Now get global start indices, which would define the first element of the
+    // tiles in the original computations.
+
+    // Now determine if we have full/partial tiles. This is determined by the
+    // outer dimensions of the original computations, as by definition tiling
+    // within the buffer always results in full tiles. In other words, partial
+    // tiles only occurs because of "running out" of the original data.
+
+    // And if the tiles are not full, determine how many elements to compute.
+    // With over-compute, this could be relaxed.
+
     // rewriter.eraseOp(op);
     return success();
   }
@@ -71,7 +108,7 @@ class MatMulOptimizePass
     : public PassWrapper<MatMulOptimizePass, OperationPass<ModuleOp>> {
 public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(MatMulOptimizePass)
-  StringRef getArgument() const final { return "matmul-optimize"; }
+  StringRef getArgument() const final { return "hopt"; }
   StringRef getDescription() const final { return "MatMul Optimization."; }
   MatMulOptimizePass() = default;
   MatMulOptimizePass(const MatMulOptimizePass &) {}

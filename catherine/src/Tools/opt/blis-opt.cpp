@@ -16,9 +16,11 @@
 // #include "Blis/BlisOpsDialect.cpp.inc"
 
 namespace catherine{
-namespace blis{
-  void registerMatMulOptimizePass();
-}
+// namespace blis{
+//   void registerMatMulOptimizePass();
+// }
+  void registerMatmulOptPass();
+
 }
 
 int main(int argc, char **argv) {
@@ -27,14 +29,16 @@ int main(int argc, char **argv) {
   // Register Vectorization of Convolution.
   // Register Vectorization of Pooling.
   // Register Several Optimize Pass.
-  catherine::blis::registerMatMulOptimizePass();
-
+  // catherine::blis::registerMatMulOptimizePass();
+  catherine::registerMatmulOptPass();
   mlir::DialectRegistry registry;
   // Register all MLIR core dialects.
   registerAllDialects(registry);
   // Register dialects in project.
   // clang-format off
-  registry.insert<catherine::blis::BlisDialect>();
+  registry.insert<
+    catherine::blis::BlisDialect
+    >();
   registry.insert<mlir::func::FuncDialect>();
   registry.insert<mlir::arith::ArithDialect>();
   // Add the following to include *all* MLIR Core dialects, or selectively

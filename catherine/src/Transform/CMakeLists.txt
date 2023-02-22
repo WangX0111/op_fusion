@@ -1,24 +1,24 @@
-# # add_subdirectory(Utils)
+# add_subdirectory(Utils)
 
-# add_mlir_library(KateOptimizeMatmul
-#   OptimizeMatmul.cpp
+add_mlir_library(KateTransforms
+  OptimizeMatmul.cpp
 
-#   ADDITIONAL_HEADER_DIRS
-#   ${MLIR_MAIN_INCLUDE_DIR}/mlir/Transforms
+  ADDITIONAL_HEADER_DIRS
+  ${MLIR_MAIN_INCLUDE_DIR}/mlir/Transforms
 
-#   DEPENDS
-#   MLIRStandardOpsIncGen
-#   MLIRTransformsPassIncGen
+  DEPENDS
+  # KatePassesIncGen
 
-#   LINK_LIBS PUBLIC
+
+  LINK_LIBS PUBLIC
 #   MLIRAffine
-#   MLIRAnalysis
-#   MLIRCopyOpInterface
-#   MLIRLoopLikeInterface
+  MLIRAnalysis
+  MLIRCopyOpInterface
+  MLIRLoopLikeInterface
 #   MLIRMemRef
 #   MLIRSCF
-#   MLIRPass
-#   MLIRSupport
-#   MLIRTransformUtils
+  MLIRPass
+  MLIRSupport
+  MLIRTransformUtils
 #   MLIRVector
-#   )
+  )
