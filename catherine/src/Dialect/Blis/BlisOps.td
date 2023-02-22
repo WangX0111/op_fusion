@@ -21,8 +21,25 @@ def BlisMatmulOp : Blis_Op<"matmul"> {
         ```
     }];
 
-    let arguments = (ins F64Tensor:$A, F64Tensor:$B) ;
-    let results = (outs F64Tensor);
+    let arguments = (ins 
+      // F64Tensor:$A, F64Tensor:$B, F64Tensor:$C
+      Arg<AnyMemRef, "Mult A [NxK]", [MemRead]>:$A,
+      Arg<AnyMemRef, "Mult B [KxM]", [MemRead]>:$B,
+      Arg<AnyMemRef, "res C [NxM]", [MemRead, MemWrite]>:$C
+    ) ;
+
+    
+    let assemblyFormat = [{
+      `(`
+      $A  `,`
+      $B  `,`
+      $C  
+      `)`
+      attr-dict 
+      `:`
+      `(` type($A) `,` type($B)`,` type($C) `)`
+    }];
+    // let results = (outs F64Tensor);
     // let assemblyFormat = [{
     //     ^{sym_name} {arguments}
     // }];

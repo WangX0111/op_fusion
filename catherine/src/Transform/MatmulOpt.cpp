@@ -39,21 +39,32 @@ using namespace catherine;
 
 namespace{
 
-/// optimization pass.
-class MatmulOpt
-    : public PassWrapper<MatmulOpt,  OperationPass<ModuleOp>>  {
+class MatmulOpt : public OpRewritePattern<catherine::blis::BlisMatmulOp> {
 public:
-    MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(MatmulOpt)
+  using OpRewritePattern<catherine::blis::BlisMatmulOp>::OpRewritePattern;
+  MatmulOpt(MLIRContext *context)
+      : OpRewritePattern<catherine::blis::BlisMatmulOp>(context) {
+
+  }
+
+  LogicalResult matchAndRewrite(
+      catherine::blis::BlisMatmulOp matmulOp, PatternRewriter &rewriter) const override {
+    // llvm::outs()<<"MatmulOpt:"<< "\n";
+    // matmulOp.dump();
+    // rewriter.eraseOp(matmulOp);
+    return success();
+  }
+};
+
+/// optimization pass.
+class MatmulOptPass
+    : public PassWrapper<MatmulOptPass,  OperationPass<ModuleOp>>  {
+public:
+    MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(MatmulOptPass)
     StringRef getArgument() const final { return "matmul-opt"; }
     StringRef getDescription() const final { return "MatMul Optimization."; }
-    MatmulOpt() = default;
-    MatmulOpt(const MatmulOpt &) {}
-    // explicit MatMulOptimizePass(int64_t vecSizeParam, int64_t kernelMParam,
-    //                             int64_t kernelNParam) {
-    //   vecSize = vecSizeParam;
-    //   kernelM = kernelMParam;
-    //   kernelN = kernelNParam;
-    // }
+    MatmulOptPass() = default;
+    MatmulOptPass(const MatmulOptPass &) {}
 
     void runOnOperation() override;
     void runOnBlock(Block *block);
@@ -91,29 +102,18 @@ public:
 
 } // end anonymous namespace
 
-
-// 创建一个通道来执行依赖于memref数据流的优化
-namespace catherine {
-  void registerMatmulOptPass(){
-    // PassRegistration<MatmulOpt>("matmul-transform", "matmul transform", [](){
-    //   std::make_unique<MatmulOpt::Options> ();
-    // });
-    PassRegistration<MatmulOpt>();
-  }
-}
-
 // 参数初始化
-static unsigned getMatmulOptParameter(Operation *op, StringRef name) {
+static unsigned getMatmulOptPassParameter(Operation *op, StringRef name) {
   // 默认参数
-  const llvm::DenseMap<StringRef, unsigned> kDefaultMatmulOptParams = {
+  const llvm::DenseMap<StringRef, unsigned> kDefaultMatmulOptPassParams = {
       {"M_C", 330}, {"N_C", 2048}, {"K_C", 480},
       {"M_R", 6},   {"N_R", 8},    {"K_U", 4}};
   IntegerAttr attr = op->getAttrOfType<IntegerAttr>(name);
   if (!attr) {
     // Use the default value.
-    assert(kDefaultMatmulOptParams.count(name) > 0 &&
+    assert(kDefaultMatmulOptPassParams.count(name) > 0 &&
            "default opt conf parameter not found");
-    return kDefaultMatmulOptParams.lookup(name);
+    return kDefaultMatmulOptPassParams.lookup(name);
   }
   return attr.getValue().getSExtValue();
 }
@@ -136,11 +136,14 @@ static AffineForOp getByPolyName(AffineForOp root, StringRef polyName) {
 }
 
 /// Optimize matmul nest with vectorization, packing, and register tiling.
-void MatmulOpt::optimizeMatmul(AffineForOp rootMatmulNest,
+void MatmulOptPass::optimizeMatmul(AffineForOp rootMatmulNest,
                                               unsigned M_C, unsigned N_C,
                                               unsigned K_C, unsigned M_R,
                                               unsigned N_R, unsigned K_U,
                                               OpBuilder &builder) {
+  llvm::outs()<<"optimizeMatmul transformer:"<< "\n";
+
+  rootMatmulNest.dump();                                             
   Value outputMemRef, lhsMemRef, rhsMemRef;
   //  LHS, RHS, 和输出 memrefs.
   rootMatmulNest.walk(
@@ -279,10 +282,14 @@ void MatmulOpt::optimizeMatmul(AffineForOp rootMatmulNest,
   }
 }
 
-void MatmulOpt::runOnBlock(Block *block) {
+void MatmulOptPass::runOnBlock(Block *block) {
+  llvm::outs()<<"MatmulOpt runOnBlock:"<< "\n";
+
   for (auto &op : *block) {
     if (auto forOp = dyn_cast<AffineForOp>(op)) {
       // todo 使用 mlir::tile 平铺
+      forOp.dump();
+
       StringAttr polyClass =
           forOp.getOperation()->getAttrOfType<StringAttr>("class");
       if (!polyClass || !polyClass.getValue().equals("matmul"))
@@ -290,20 +297,23 @@ void MatmulOpt::runOnBlock(Block *block) {
 
       OpBuilder builder(forOp);
 
-      auto M_C = getMatmulOptParameter(forOp, "M_C");
-      auto N_C = getMatmulOptParameter(forOp, "N_C");
-      auto K_C = getMatmulOptParameter(forOp, "K_C");
-      auto M_R = getMatmulOptParameter(forOp, "M_R");
-      auto N_R = getMatmulOptParameter(forOp, "N_R");
-      auto K_U = getMatmulOptParameter(forOp, "K_U");
+      auto M_C = getMatmulOptPassParameter(forOp, "M_C");
+      auto N_C = getMatmulOptPassParameter(forOp, "N_C");
+      auto K_C = getMatmulOptPassParameter(forOp, "K_C");
+      auto M_R = getMatmulOptPassParameter(forOp, "M_R");
+      auto N_R = getMatmulOptPassParameter(forOp, "N_R");
+      auto K_U = getMatmulOptPassParameter(forOp, "K_U");
 
       optimizeMatmul(forOp, M_C, N_C, K_C, M_R, N_R, K_U, builder);
     }
   }
 }
 
-void MatmulOpt::runOnOperation() {
+void MatmulOptPass::runOnOperation() {
+  llvm::outs()<<"MatmulOpt:"<< "\n";
+
   auto moduleOp = getOperation();
+  // moduleOp.dump();
   // Get the first func in the module
   mlir::func::FuncOp func = nullptr;
   moduleOp.walk([&func](mlir::func::FuncOp it) {
@@ -321,12 +331,17 @@ void MatmulOpt::runOnOperation() {
 
   // Canonicalize.
   {
-    auto *context = &getContext();
-    RewritePatternSet patterns(context);
-    AffineLoadOp::getCanonicalizationPatterns(patterns, context);
-    AffineStoreOp::getCanonicalizationPatterns(patterns, context);
-    AffineApplyOp::getCanonicalizationPatterns(patterns, context);
-    (void)applyPatternsAndFoldGreedily(func, std::move(patterns));
+   
+    ConversionTarget target(getContext());
+    RewritePatternSet patterns(&getContext());
+    patterns.insert<MatmulOpt>( &getContext());
+    LogicalResult res =
+        applyPatternsAndFoldGreedily(moduleOp, std::move(patterns));
+    assert((succeeded(res) || failed(res)) && "remove unused var warning");
+    // AffineLoadOp::getCanonicalizationPatterns(patterns, context);
+    // AffineStoreOp::getCanonicalizationPatterns(patterns, context);
+    // AffineApplyOp::getCanonicalizationPatterns(patterns, context);
+    // (void)applyPatternsAndFoldGreedily(func, std::move(patterns));
   }
 
   // 标量替代
@@ -335,3 +350,15 @@ void MatmulOpt::runOnOperation() {
   // }
 }
 
+
+// 创建一个通道来执行依赖于memref数据流的优化
+namespace catherine {
+  void registerMatmulOptPass(){
+    PassRegistration<MatmulOptPass>();
+  }
+}
+
+// 以后放在passes中
+// std::unique_ptr<Pass> catherine::createMatmulOptPass() {
+//   return std::make_unique<MatmulOptPass>();
+// }

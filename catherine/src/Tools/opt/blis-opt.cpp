@@ -19,7 +19,7 @@ namespace catherine{
 namespace blis{
   void registerKrnlMatMulLoweringPass();
 }
-  // void registerMatmulOptPass();
+  void registerMatmulOptPass();
 
 }
 
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   // Register Vectorization of Pooling.
   // Register Several Optimize Pass.
   catherine::blis::registerKrnlMatMulLoweringPass();
-  // catherine::registerMatmulOptPass();
+  catherine::registerMatmulOptPass();
   mlir::DialectRegistry registry;
   // Register all MLIR core dialects.
   registerAllDialects(registry);
@@ -41,6 +41,8 @@ int main(int argc, char **argv) {
     >();
   registry.insert<mlir::func::FuncDialect>();
   registry.insert<mlir::arith::ArithDialect>();
+  registry.insert<mlir::linalg::LinalgDialect>();
+
   // Add the following to include *all* MLIR Core dialects, or selectively
   // include what you need like above. You only need to register dialects that
   // will be *parsed* by the tool, not the one generated

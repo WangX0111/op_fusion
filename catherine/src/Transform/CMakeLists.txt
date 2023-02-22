@@ -1,7 +1,7 @@
 # add_subdirectory(Utils)
 
 add_mlir_library(KateTransforms
-  OptimizeMatmul.cpp
+  MatmulOpt.cpp
 
   ADDITIONAL_HEADER_DIRS
   ${MLIR_MAIN_INCLUDE_DIR}/mlir/Transforms

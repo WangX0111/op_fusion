@@ -41,7 +41,6 @@ public:
   matchAndRewrite(Operation *op, ArrayRef<Value> /*operands*/,
                   ConversionPatternRewriter &rewriter) const override {
     auto matmulOp = cast<catherine::blis::BlisMatmulOp>(op);
-    llvm::outs()<<"casted matmul op:"<<matmulOp<< "\n";
     catherine::blis::BlisMatmulOpAdaptor operandAdaptor(matmulOp);
 
     // Option.
@@ -65,7 +64,8 @@ public:
     // Get the two dimensions of the matmul operation.
     auto lhsShape = matmulOp.getOperand(0).getType().cast<ShapedType>().getShape();
     auto rhsShape = matmulOp.getOperand(1).getType().cast<ShapedType>().getShape();
-    auto resShape = matmulOp.getResult().getType().cast<ShapedType>().getShape();
+    auto resShape = matmulOp.getOperand(2).getType().cast<ShapedType>().getShape();
+    // auto resShape = matmulOp.getResult().getType().cast<ShapedType>().getShape();
     int64_t m = lhsShape[0];
     int64_t k = lhsShape[1];
     int64_t n = rhsShape[1];
@@ -90,6 +90,7 @@ public:
     matmulOp.getOperation()->setAttr("N_R", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 16));
     matmulOp.getOperation()->setAttr("K_U", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 4));
 
+    llvm::outs()<<"converted matmul op:"<< "\n";
     matmulOp.dump();
     // Get the global upper bound of the original computations.
 
@@ -132,7 +133,7 @@ class KrnlMatMulLoweringPass
     : public PassWrapper<KrnlMatMulLoweringPass, OperationPass<ModuleOp>> {
 public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(KrnlMatMulLoweringPass)
-  StringRef getArgument() const final { return "hopt"; }
+  StringRef getArgument() const final { return "blis"; }
   StringRef getDescription() const final { return "MatMul Optimization."; }
   KrnlMatMulLoweringPass() = default;
   KrnlMatMulLoweringPass(const KrnlMatMulLoweringPass &) {}
