@@ -24,6 +24,19 @@
 using namespace mlir;
 using namespace vector;
 
+
+// 定义BLIS操作的C++实现
+void blis_gemm(MemRefType A, MemRefType B, MemRefType C) {
+  // 调用BLIS库实现矩阵乘法
+  blis_dgemm(
+    BLIS_NO_TRANSPOSE, BLIS_NO_TRANSPOSE, 
+    A.dim(0), B.dim(1), A.dim(1), 
+    1.0, A.data(), A.stride(0), A.stride(1), 
+    B.data(), B.stride(0), B.stride(1), 
+    1.0, C.data(), C.stride(0), C.stride(1)
+  );
+}
+
 //===----------------------------------------------------------------------===//
 // Rewrite Pattern
 //===----------------------------------------------------------------------===//
@@ -50,7 +63,7 @@ public:
     Value A = op->getOperand(0);
     llvm::outs()<<"Value A:"<<A<< "\n";
     Value B = op->getOperand(1);
-    // Value C = op->getOperand(2);
+    Value C = op->getOperand(2);
     // Type elementType =
     //     operandAdaptor.A().getType().cast<MemRefType>().getElementType();
     // Init scope and emit constants.
@@ -110,7 +123,11 @@ public:
     // And if the tiles are not full, determine how many elements to compute.
     // With over-compute, this could be relaxed.
 
-    // rewriter.eraseOp(op);
+    MemRefType MA = matmulOp.getOperand(0).getType().cast<MemRefType>();
+    MemRefType MB = matmulOp.getOperand(1).getType().cast<MemRefType>();
+    MemRefType MC = matmulOp.getOperand(2).getType().cast<MemRefType>();
+    blis_gemm(MA, MB, MC)
+    rewriter.eraseOp(op);
     return success();
   }
 

@@ -74,6 +74,16 @@ link_directories(${LLVM_BUILD_LIBRARY_DIR})
 add_definitions(${LLVM_DEFINITIONS})
 
 #-------------------------------------------------------------------------------
+# BLIS
+#-------------------------------------------------------------------------------
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+
+find_package(BLIS REQUIRED)
+include_directories(/usr/local/include/blis)
+link_directories(/usr/local/lib/blis)
+# target_link_libraries(Catherine BLIS::BLIS)
+
+#-------------------------------------------------------------------------------
 # Hardware detection
 #-------------------------------------------------------------------------------
 
