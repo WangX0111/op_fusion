@@ -119,7 +119,7 @@ static unsigned getMatmulOptPassParameter(Operation *op, StringRef name) {
 }
 
 static AffineForOp getByPolyName(AffineForOp root, StringRef polyName) {
-  const char *kPolyCodeGenAttrName = "poly_codegen_name";
+  const char *kPolyCodeGenAttrName = "poly_name";
   AffineForOp res;
   root.walk([&](AffineForOp forOp) {
     auto stringAttr = forOp->getAttrOfType<StringAttr>(kPolyCodeGenAttrName);
@@ -143,7 +143,6 @@ void MatmulOptPass::optimizeMatmul(AffineForOp rootMatmulNest,
                                               OpBuilder &builder) {
   llvm::outs()<<"optimizeMatmul transformer:"<< "\n";
 
-  rootMatmulNest.dump();                                             
   Value outputMemRef, lhsMemRef, rhsMemRef;
   //  LHS, RHS, 和输出 memrefs.
   rootMatmulNest.walk(
@@ -210,7 +209,7 @@ void MatmulOptPass::optimizeMatmul(AffineForOp rootMatmulNest,
                                      /*slowMemorySpace=*/0,
                                      /*fastMemorySpace=*/0,
                                      /*tagMemorySpace=*/0,
-                                     /*fastMemCapacityBytes=*/2 * 1024 * 1024UL
+                                     /*fastMemCapacityBytes=*/32 * 1024 * 1024UL
                                     };
 
     // For the LHS matrix (pack into L2).
@@ -220,12 +219,15 @@ void MatmulOptPass::optimizeMatmul(AffineForOp rootMatmulNest,
     // copyOptions.fastBufferLayout = AffineMap();
     SmallVector<Value, 1> fastBuf;
     DenseSet<Operation *> copyNests;
+
+    // affineDataCopyGenerate会分析代码，寻找affine loads和affine stores的引用，然后自动生成affine copy operations。
+    // 使用affineDataCopyGenerate pass可以将数据复制到内存布局良好的存储方案中，以便使用硬件加速器进行加速。同时，这种数据复制操作还可以帮助提高并行性，并为许多ML应用程序提供性能优势。
     affineDataCopyGenerate(iC.getBody()->begin(),
                            std::prev(iC.getBody()->end()), copyOptions,
                            lhsMemRef, copyNests
                           //  , &fastBuf
                            );
-    lhsBuf = fastBuf[0];
+    // lhsBuf = fastBuf[0];
 
     if (kC) {
       // RHS matrix, pack into L3 tile if the kC loop exists.
@@ -235,9 +237,9 @@ void MatmulOptPass::optimizeMatmul(AffineForOp rootMatmulNest,
                              rhsMemRef, copyNests
                             //  , &fastBuf
                              );
-      rhsL3Buf = fastBuf[0];
+      // rhsL3Buf = fastBuf[0];
     } else {
-      rhsL3Buf = rhsMemRef;
+      // rhsL3Buf = rhsMemRef;
     }
 
     // For the RHS matrix (pack into L1).
@@ -248,27 +250,31 @@ void MatmulOptPass::optimizeMatmul(AffineForOp rootMatmulNest,
                            /*filterMemRef=*/rhsL3Buf, copyNests
                           //  , &fastBuf
                            );
-    rhsL1Buf = fastBuf[0];
+    // rhsL1Buf = fastBuf[0];
 
-    // 将LHS和RHS缓冲器的对齐为256位，如果已经是矢量memrefs，就不需要设置对齐。
-    auto allocOp = cast<memref::AllocOp>(lhsBuf.getDefiningOp());
-    auto alignmentAttrName = allocOp.getAlignmentAttrName();
-    auto alignmentAttr = builder.getI64IntegerAttr(32);
-    allocOp->setAttr(alignmentAttrName, alignmentAttr);
-    // cast<memref::AllocOp>(lhsBuf.getDefiningOp())
+    // // 将LHS和RHS缓冲器的对齐为256位，如果已经是矢量memrefs，就不需要设置对齐。
+    // auto allocOp = cast<memref::AllocOp>(lhsBuf.getDefiningOp());
+    // auto alignmentAttrName = allocOp.getAlignmentAttrName();
+    // auto alignmentAttr = builder.getI64IntegerAttr(32);
+    // allocOp->setAttr(alignmentAttrName, alignmentAttr);
+    // // cast<memref::AllocOp>(lhsBuf.getDefiningOp())
+
+
     //     ->setAttr(memref::AllocOp::getAlignmentAttrName(),
     //              builder.getI64IntegerAttr(32));
     // The rhsL3buf could sometimes just be the original memref / func arg.
-    if ( rhsL3Buf.getDefiningOp()){
-      auto rhsAllocOp = cast<memref::AllocOp>(rhsL3Buf.getDefiningOp());
 
-      auto rhsAllocOpAlignmentAttrName = rhsAllocOp.getAlignmentAttrName();
-      rhsAllocOp->setAttr(rhsAllocOpAlignmentAttrName,
-                          builder.getI64IntegerAttr(32));
-    }
-    auto rhsL1BufOp = cast<memref::AllocOp>(rhsL1Buf.getDefiningOp());
-    rhsL1BufOp->setAttr(rhsL1BufOp.getAlignmentAttrName(),
-                 builder.getI64IntegerAttr(32));
+
+    // if ( rhsL3Buf.getDefiningOp()){
+    //   auto rhsAllocOp = cast<memref::AllocOp>(rhsL3Buf.getDefiningOp());
+
+    //   auto rhsAllocOpAlignmentAttrName = rhsAllocOp.getAlignmentAttrName();
+    //   rhsAllocOp->setAttr(rhsAllocOpAlignmentAttrName,
+    //                       builder.getI64IntegerAttr(32));
+    // }
+    // auto rhsL1BufOp = cast<memref::AllocOp>(rhsL1Buf.getDefiningOp());
+    // rhsL1BufOp->setAttr(rhsL1BufOp.getAlignmentAttrName(),
+    //              builder.getI64IntegerAttr(32));
   }
 
   if (clUnroll) {
@@ -288,11 +294,11 @@ void MatmulOptPass::runOnBlock(Block *block) {
   for (auto &op : *block) {
     if (auto forOp = dyn_cast<AffineForOp>(op)) {
       // todo 使用 mlir::tile 平铺
-      forOp.dump();
 
       StringAttr polyClass =
           forOp.getOperation()->getAttrOfType<StringAttr>("class");
-      if (!polyClass || !polyClass.getValue().equals("matmul"))
+      polyClass.dump();
+      if (!polyClass || !polyClass.getValue().equals("blis.matmul"))
         continue;
 
       OpBuilder builder(forOp);
@@ -303,8 +309,9 @@ void MatmulOptPass::runOnBlock(Block *block) {
       auto M_R = getMatmulOptPassParameter(forOp, "M_R");
       auto N_R = getMatmulOptPassParameter(forOp, "N_R");
       auto K_U = getMatmulOptPassParameter(forOp, "K_U");
-
+      llvm::outs()<<M_C<<" "<<N_C<<" "<<K_C<<"\n";
       optimizeMatmul(forOp, M_C, N_C, K_C, M_R, N_R, K_U, builder);
+      forOp.dump();
     }
   }
 }
@@ -313,36 +320,34 @@ void MatmulOptPass::runOnOperation() {
   llvm::outs()<<"MatmulOpt:"<< "\n";
 
   auto moduleOp = getOperation();
-  // moduleOp.dump();
   // Get the first func in the module
-  mlir::func::FuncOp func = nullptr;
-  moduleOp.walk([&func](mlir::func::FuncOp it) {
-    if (!func) {
-      func = it;
+  // mlir::func::FuncOp func = nullptr;
+  moduleOp.walk([this, moduleOp](mlir::func::FuncOp func) {
+    // Process all blocks of the function.
+    for (auto &block : func.getBlocks())
+      runOnBlock(&block);
+
+    // Normalize non-identity layouts used.
+    func.walk([](memref::AllocOp allocOp) { (void)normalizeMemRef(&allocOp); });
+
+    // Canonicalize.
+    {
+    
+      ConversionTarget target(getContext());
+      RewritePatternSet patterns(&getContext());
+      patterns.insert<MatmulOpt>( &getContext());
+      LogicalResult res =
+          applyPatternsAndFoldGreedily(moduleOp, std::move(patterns));
+      assert((succeeded(res) || failed(res)) && "remove unused var warning");
+      // AffineLoadOp::getCanonicalizationPatterns(patterns, context);
+      // AffineStoreOp::getCanonicalizationPatterns(patterns, context);
+      // AffineApplyOp::getCanonicalizationPatterns(patterns, context);
+      // (void)applyPatternsAndFoldGreedily(func, std::move(patterns));
     }
+
   });
 
-  // Process all blocks of the function.
-  for (auto &block : func.getBlocks())
-    runOnBlock(&block);
-
-  // Normalize non-identity layouts used.
-  func.walk([](memref::AllocOp allocOp) { (void)normalizeMemRef(&allocOp); });
-
-  // Canonicalize.
-  {
-   
-    ConversionTarget target(getContext());
-    RewritePatternSet patterns(&getContext());
-    patterns.insert<MatmulOpt>( &getContext());
-    LogicalResult res =
-        applyPatternsAndFoldGreedily(moduleOp, std::move(patterns));
-    assert((succeeded(res) || failed(res)) && "remove unused var warning");
-    // AffineLoadOp::getCanonicalizationPatterns(patterns, context);
-    // AffineStoreOp::getCanonicalizationPatterns(patterns, context);
-    // AffineApplyOp::getCanonicalizationPatterns(patterns, context);
-    // (void)applyPatternsAndFoldGreedily(func, std::move(patterns));
-  }
+  
 
   // 标量替代
   // if (clScalRep) {

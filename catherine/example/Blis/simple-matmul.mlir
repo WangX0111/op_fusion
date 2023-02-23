@@ -1,6 +1,8 @@
 module {
-  func.func @main(%arg0: tensor<2x3xf64>, %arg1: tensor<3x4xf64>) -> tensor<2x4xf64> {
-    %0 = "blis.matmul"(%arg0, %arg1) : (tensor<2x3xf64>, tensor<3x4xf64>) -> tensor<2x4xf64>
-    return %0 : tensor<2x4xf64>
+  func.func @main(%A : memref<2088x2048xf64>, %B: memref<2048x2048xf64>, %C: memref<2088x2048xf64>)  {
+    "blis.matmul" ( %A, %B, %C ) : ( memref<2088x2048xf64>, memref<2048x2048xf64>, memref<2088x2048xf64> ) -> ()
+ 
+  return
   }
+
 }

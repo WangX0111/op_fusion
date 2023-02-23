@@ -19,10 +19,13 @@ MTRIPLE := x86_64-apple-darwin
 endif
 
 blis:
+	@${BLIS_OPT} -blis -matmul-opt simple-matmul.mlir ${MLIR_OPT_OPTIONS} \
+		-convert-linalg-to-loops -lower-affine -convert-scf-to-cf \
+		-o ./log.mlir
+
+blis-1:
 	@${BLIS_OPT} -blis -matmul-opt dgemm-matmul.mlir ${MLIR_OPT_OPTIONS} \
 		-convert-linalg-to-loops -lower-affine -convert-scf-to-cf \
-		-convert-vector-to-llvm -convert-memref-to-spirv -convert-spirv-to-llvm -convert-arith-to-llvm \
-		-convert-func-to-llvm -reconcile-unrealized-casts \
 		-o ./log.mlir
 
 linalg-matmul-lower:
