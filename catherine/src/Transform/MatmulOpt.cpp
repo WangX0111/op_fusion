@@ -15,7 +15,6 @@
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "mlir/Dialect/Affine/LoopUtils.h"
 #include "mlir/Transforms/Passes.h"
 #include "llvm/Support/Debug.h"
 #include <mlir/Dialect/Func/IR/FuncOps.h>
@@ -44,12 +43,19 @@ public:
   using OpRewritePattern<catherine::blis::BlisMatmulOp>::OpRewritePattern;
   MatmulOpt(MLIRContext *context)
       : OpRewritePattern<catherine::blis::BlisMatmulOp>(context) {
-
+    //参数初始化
   }
 
   LogicalResult matchAndRewrite(
       catherine::blis::BlisMatmulOp matmulOp, PatternRewriter &rewriter) const override {
-    // llvm::outs()<<"MatmulOpt:"<< "\n";
+    // llvm::outs()<<"MatmulOpt match and rewrite:"<< "\n";
+    // todo 这里对原来的矩阵进行转换，生成blis用到的属性
+    // matmulOp.getOperation()->setAttr("M_C", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 330));
+    // matmulOp.getOperation()->setAttr("N_C", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 2048));
+    // matmulOp.getOperation()->setAttr("K_C", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 480));
+    // matmulOp.getOperation()->setAttr("M_R", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 3));
+    // matmulOp.getOperation()->setAttr("N_R", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 16));
+    // matmulOp.getOperation()->setAttr("K_U", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 4));
     // matmulOp.dump();
     // rewriter.eraseOp(matmulOp);
     return success();

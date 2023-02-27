@@ -14,11 +14,13 @@
 #include <mlir/Pass/Pass.h>
 #include "llvm/Support/Debug.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+// #include "mlir/Transforms/AffineDataCopyGeneration.h"
+
 // #include "mlir/IR/Types.h"
 // #include "mlir/IR/StandardTypes.h"
 
-
 #include "Blis/BlisOps.h"
+#include <blis.h>
 
 #define DEBUG_TYPE "kate"
 using namespace mlir;
@@ -27,16 +29,23 @@ using namespace vector;
 
 // 定义BLIS操作的C++实现
 void blis_gemm(MemRefType A, MemRefType B, MemRefType C) {
-  // 调用BLIS库实现矩阵乘法
-  blis_dgemm(
-    BLIS_NO_TRANSPOSE, BLIS_NO_TRANSPOSE, 
-    A.dim(0), B.dim(1), A.dim(1), 
-    1.0, A.data(), A.stride(0), A.stride(1), 
-    B.data(), B.stride(0), B.stride(1), 
-    1.0, C.data(), C.stride(0), C.stride(1)
-  );
+ 
+  // // 调用BLIS库实现矩阵乘法，暂时使用mock数据
+  // dim_t m = 4, n = 5, k = 3;
+  // inc_t rsa = 1, csa = m;
+  // inc_t rsb = 1, csb = k;
+  // inc_t rsc = 1, csc= m;
+  // double c[m * n];
+  // double a[m * k];
+  // double b[k * n];
+  // double alpha = 1.0;
+  // double beta = 1.0;
+  // bli_dgemm(BLIS_NO_TRANSPOSE, BLIS_NO_TRANSPOSE,
+  //           m, n, k, 
+  //           &alpha, a, rsa, csa, 
+  //           b, rsb, csb, 
+  //           &beta, c, rsc, csc);
 }
-
 //===----------------------------------------------------------------------===//
 // Rewrite Pattern
 //===----------------------------------------------------------------------===//
@@ -56,22 +65,6 @@ public:
     auto matmulOp = cast<catherine::blis::BlisMatmulOp>(op);
     catherine::blis::BlisMatmulOpAdaptor operandAdaptor(matmulOp);
 
-    // Option.
-
-    // Operands and types.
-    // Get input A, B, C.
-    Value A = op->getOperand(0);
-    llvm::outs()<<"Value A:"<<A<< "\n";
-    Value B = op->getOperand(1);
-    Value C = op->getOperand(2);
-    // Type elementType =
-    //     operandAdaptor.A().getType().cast<MemRefType>().getElementType();
-    // Init scope and emit constants.
-    Location loc = matmulOp.getLoc();
-
-    // Gather A, B, C tile sizes.
-    // SmallVector<IndexExpr, 2> aTileSize, bTileSize;
-    // Value A(operandAdaptor.A()), B(operandAdaptor.B());
 
     matmulOp->dump();
     // Get the two dimensions of the matmul operation.
@@ -87,46 +80,22 @@ public:
     std::string sizeInfoStr = std::to_string(m) + "x" + std::to_string(k) + "x" + std::to_string(n);
     auto sizeInfoAttr = StringAttr::get(matmulOp.getContext(), sizeInfoStr);
 
-    // Tile sizes for A/B/C are determined by their memref unless explicitly
-    // specified by an optional argument. That allows A/B/C memrefs to be
-    // padded if needed for SIMD/unroll and jam, for example.
-
-    // Gather N, M, K compute tile size. This is the size of the computations,
-    // if the tile is full. Because computation in the buffers could be further
-    // sub-tiled, the default size can be overridden from the tile sizes using
-    // the computeTileSize attribute. Tiles may not be full if they are at the
-    // outer boundaries of the original data.
-    matmulOp.getOperation()->setAttr("M_C", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 330));
-    matmulOp.getOperation()->setAttr("N_C", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 2048));
-    matmulOp.getOperation()->setAttr("K_C", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 480));
-    matmulOp.getOperation()->setAttr("M_R", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 3));
-    matmulOp.getOperation()->setAttr("N_R", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 16));
-    matmulOp.getOperation()->setAttr("K_U", IntegerAttr::get(IntegerType::get(matmulOp.getContext(), 32), 4));
-
-    llvm::outs()<<"converted matmul op:"<< "\n";
-    matmulOp.dump();
-    // Get the global upper bound of the original computations.
-
-    // Has a matrix times vector when the J upper bound is literal 1.
-
-    // Investigate SIMD
-    // Assume no simd.
-
-    // Now get global start indices, which would define the first element of the
-    // tiles in the original computations.
-
-    // Now determine if we have full/partial tiles. This is determined by the
-    // outer dimensions of the original computations, as by definition tiling
-    // within the buffer always results in full tiles. In other words, partial
-    // tiles only occurs because of "running out" of the original data.
-
-    // And if the tiles are not full, determine how many elements to compute.
-    // With over-compute, this could be relaxed.
-
     MemRefType MA = matmulOp.getOperand(0).getType().cast<MemRefType>();
     MemRefType MB = matmulOp.getOperand(1).getType().cast<MemRefType>();
     MemRefType MC = matmulOp.getOperand(2).getType().cast<MemRefType>();
-    blis_gemm(MA, MB, MC)
+    blis_gemm(MA, MB, MC);
+
+    // 遍历所有的matmul操作，将它们替换为BLIS dgemm
+    matmulOp.walk([&](catherine::blis::BlisMatmulOp matmul) {
+
+      // 使用BLIS的dgemm来替换matmul操作
+      blis_gemm(MA, MB, MC);
+      auto newCTy =
+        MemRefType::get({m, n}, MC.getElementType());
+    });
+
+
+
     rewriter.eraseOp(op);
     return success();
   }
@@ -170,6 +139,8 @@ void KrnlMatMulLoweringPass::runOnOperation() {
   MLIRContext *context = &getContext();
   ModuleOp module = getOperation();
 
+  
+
   ConversionTarget target(*context);
   target
       .addLegalDialect<arith::ArithDialect, AffineDialect, scf::SCFDialect,
@@ -179,7 +150,10 @@ void KrnlMatMulLoweringPass::runOnOperation() {
 
   RewritePatternSet patterns(context);
   patterns.add<KrnlMatMulLoweringPattern>(context);
+  // patterns.insert<BLISAffineDataCopyGenerate>(context);
   // patterns.add<MatMulOptimizePattern>(context, vecSize, kernelM, kernelN);
+  
+  // (void)applyPatternsAndFoldGreedily(module, std::move(patterns));
 
   if (failed(applyPartialConversion(module, target, std::move(patterns))))
     signalPassFailure();
