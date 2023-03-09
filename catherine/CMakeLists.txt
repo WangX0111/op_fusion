@@ -74,6 +74,13 @@ link_directories(${LLVM_BUILD_LIBRARY_DIR})
 add_definitions(${LLVM_DEFINITIONS})
 
 #-------------------------------------------------------------------------------
+# third party
+#-------------------------------------------------------------------------------
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/onnx-mlir/include)
+link_directories(${CMAKE_CURRENT_BINARY_DIR}/third_party/onnx-mlir)
+
+
+#-------------------------------------------------------------------------------
 # BLIS
 #-------------------------------------------------------------------------------
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
@@ -118,7 +125,7 @@ endif()
 #-------------------------------------------------------------------------------
 # Directory setup
 #-------------------------------------------------------------------------------
-
+add_subdirectory(third_party/onnx-mlir)
 # add_subdirectory(cmake)
 # add_subdirectory(include)
 # add_subdirectory(lib)

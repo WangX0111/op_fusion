@@ -1,0 +1,3 @@
+cd /home/ustc/wang/op_fusion
+# get cbr.onnx.mlir  cbr.tmp 
+onnx-mlir-opt -cse -convert-onnx-to-krnl ./model/cbr-onnx.mlir 

@@ -1,0 +1,4 @@
+cd /home/ustc/wang/op_fusion
+# get cbr.onnx.mlir  cbr.tmp 
+onnx-mlir -EmitONNXIR ./model/cbr.onnx
+onnx-mlir -EmitMLIR ./model/cbr.onnx

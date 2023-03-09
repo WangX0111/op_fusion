@@ -17,10 +17,10 @@
 
 namespace catherine{
 namespace blis{
-  void registerKrnlMatMulLoweringPass();
+  // void registerKrnlMatMulLoweringPass();
 }
   void registerMatmulOptPass();
-
+  void registerONNXToKrnlLoweringPass();
 }
 
 int main(int argc, char **argv) {
@@ -29,8 +29,9 @@ int main(int argc, char **argv) {
   // Register Vectorization of Convolution.
   // Register Vectorization of Pooling.
   // Register Several Optimize Pass.
-  catherine::blis::registerKrnlMatMulLoweringPass();
-  catherine::registerMatmulOptPass();
+  // catherine::blis::registerKrnlMatMulLoweringPass();
+  // catherine::registerMatmulOptPass();
+  catherine::registerONNXToKrnlLoweringPass();
   mlir::DialectRegistry registry;
   // Register all MLIR core dialects.
   registerAllDialects(registry);

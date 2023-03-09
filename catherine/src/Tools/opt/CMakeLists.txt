@@ -10,6 +10,7 @@ set(LIBS
         MLIROptLib
         MLIRBlis
         KateKrnlToAffine
+        KateONNXToKrnl
         KateTransforms
         )
 add_llvm_executable(blis-opt blis-opt.cpp)

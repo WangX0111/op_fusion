@@ -1,1 +1,2 @@
 add_subdirectory(KrnlToAffine)
+add_subdirectory(ONNXToKrnl)

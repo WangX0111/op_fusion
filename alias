@@ -1,0 +1,3 @@
+alias blis=/home/ustc/wang/op_fusion/catherine/build/bin/blis-opt 
+alias om-opt=/home/ustc/wang/onnx-mlir/build/Debug/bin/onnx-mlir-opt 
+alias om=/home/ustc/wang/onnx-mlir/build/Debug/bin/onnx-mlir

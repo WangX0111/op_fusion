@@ -18,6 +18,11 @@ MLIR_ASYNC_RUNTIME := ../../../../llvm-project/build/lib/libmlir_async_runtime.d
 MTRIPLE := x86_64-apple-darwin
 endif
 
+fuse:
+	@${BLIS_OPT}  -blis simple-matmul.mlir ${MLIR_OPT_OPTIONS} \
+		-convert-linalg-to-loops -lower-affine -convert-scf-to-cf \
+		-o ./log.mlir
+
 blis:
 	@${BLIS_OPT} -blis -matmul-opt simple-matmul.mlir ${MLIR_OPT_OPTIONS} \
 		-convert-linalg-to-loops -lower-affine -convert-scf-to-cf \

@@ -1,0 +1,47 @@
+pytorch1.13.1:…
+¬
+input
+onnx::Conv_22
+onnx::Conv_23/conv1/Conv_output_0/conv1/Conv"Conv*
+	dilations@@ *
+group *
+kernel_shape@@ *
+pads@@@@ *
+strides@@ 
+?
+/conv1/Conv_output_0/relu1/Relu_output_0/relu1/Relu"Relu
+»
+/relu1/Relu_output_0
+onnx::Conv_25
+onnx::Conv_26/conv2/Conv_output_0/conv2/Conv"Conv*
+	dilations@@ *
+group *
+kernel_shape@@ *
+pads@@@@ *
+strides@@ 
+1
+/conv2/Conv_output_0output/relu2/Relu"Relu	torch_jit*RBonnx::Conv_22j
+locationcbr.onnx.extj
+offset0j
+length1728p*MBonnx::Conv_23j
+locationcbr.onnx.extj
+offset1728j
+length64p*V Bonnx::Conv_25j
+locationcbr.onnx.extj
+offset1792j
+length18432p*O Bonnx::Conv_26j
+locationcbr.onnx.extj
+offset20224j
+length128pZ$
+input
+
+batch
+
+
+b%
+output
+
+batch
+ 
+
+B
