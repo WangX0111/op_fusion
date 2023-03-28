@@ -65,3 +65,9 @@ This is an example work-flow and configuration to get and build the LLVM source:
 ## Build standalone
 
 `cd catherine && ./build.sh`
+
+## References
+1. [Toy Tutorial Chapter2: Emitting Basic MLIR](https://mlir.llvm.org/docs/Tutorials/Toy/Ch-2/#interfacing-with-mlir)
+2. [ONNX-MLIR](https://github.com/onnx/onnx-mlir)
+3. [DNNBuilder](https://github.com/IBM/AccDNN)
+4. [scalehls](https://github.com/hanchenye/scalehls)

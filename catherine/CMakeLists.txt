@@ -125,12 +125,13 @@ endif()
 #-------------------------------------------------------------------------------
 # Directory setup
 #-------------------------------------------------------------------------------
-add_subdirectory(third_party/onnx-mlir)
+# add_subdirectory(third_party/onnx-mlir)
 # add_subdirectory(cmake)
 # add_subdirectory(include)
 # add_subdirectory(lib)
 add_subdirectory(src)
-# add_subdirectory(tools)
+add_subdirectory(test)
+add_subdirectory(tools)
 # add_subdirectory(examples)
 # add_subdirectory(tests)
 # add_subdirectory(frontend)
