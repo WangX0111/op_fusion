@@ -1,0 +1,67 @@
+//===-------------------------------------------------------*- tablegen -*-===//
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef DIALECT_HLS_ATTRIBUTES_TD
+#define DIALECT_HLS_ATTRIBUTES_TD
+
+//===----------------------------------------------------------------------===//
+// Customized Scalar and Array Attributes
+// //===----------------------------------------------------------------------===//
+def PositiveUI32Attr : ConfinedAttr<UI32Attr, [IntPositive]> {}
+def PositiveUI32ArrayAttr : TypedArrayAttrBase<PositiveUI32Attr, ""> {}
+
+def UI32ArrayAttr : TypedArrayAttrBase<UI32Attr, ""> {}
+
+//===----------------------------------------------------------------------===//
+// Pragma bind_storage Attributes
+//===----------------------------------------------------------------------===//
+
+def LegalStorageType : AttrConstraint<Or<[
+  CPred<"$_self.cast<StringAttr>().getValue() == \"fifo\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"ram_1p\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"ram_1wnr\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"ram_2p\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"ram_s2p\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"ram_t2p\"">
+]>>;
+
+def StorageTypeAttr : ConfinedAttr<StrAttr, [LegalStorageType]> {}
+
+def LegalStorageImpl : AttrConstraint<Or<[
+  CPred<"$_self.cast<StringAttr>().getValue() == \"bram\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"lutram\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"uram\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"srl\"">
+]>>;
+
+def StorageImplAttr : ConfinedAttr<StrAttr, [LegalStorageImpl]> {}
+
+//===----------------------------------------------------------------------===//
+// Pragma array_partition Constraints
+//===----------------------------------------------------------------------===//
+
+def LegalPartitionType : AttrConstraint<Or<[
+  CPred<"$_self.cast<StringAttr>().getValue() == \"cyclic\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"block\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"complete\"">
+]>>;
+
+def PartitionTypeAttr : ConfinedAttr<StrAttr, [LegalPartitionType]> {}
+
+//===----------------------------------------------------------------------===//
+// Pragma bind_op Constraints
+//===----------------------------------------------------------------------===//
+
+def LegalOpImpl : AttrConstraint<Or<[
+  CPred<"$_self.cast<StringAttr>().getValue() == \"dsp\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"fabric\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"meddsp\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"fulldsp\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"maxdsp\"">,
+  CPred<"$_self.cast<StringAttr>().getValue() == \"primitivedsp\"">
+]>>;
+
+def OpImplAttr : ConfinedAttr<StrAttr, [LegalOpImpl]> {}
+
+#endif // DIALECT_HLS_ATTRIBUTES_TD

@@ -38,7 +38,7 @@ def Estimation : Pass<"estimation", "mlir::ModuleOp"> {
     resource constraints and pragma settings into consideration, and conduct the
     estimation through an ALAP scheduling.
   }];
-  let constructor = "mlir::catherine::hls::createEstimationPass()";
+  let constructor = "mlir::catherine::createEstimationPass()";
 
   let options = [
     Option<"toolConfig", "tool-config", "std::string",

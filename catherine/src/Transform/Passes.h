@@ -15,26 +15,25 @@
 
 namespace mlir {
 class Pass;
+namespace func {
+class FuncOp;
+} // namespace func
 }
 
 
 namespace mlir {
 namespace catherine {
-namespace hls {
-
 
 /// Creates a pass that performs mamul optimization.
 // std::unique_ptr<mlir::Pass> createMatmulOptPass();
+void registerHLSDSEPipeline();
+void registerTransformsPasses();
 
 std::unique_ptr<Pass> createEstimationPass();
-
-void registerHLSPasses();
-// void registerTransformsPasses();
 
 #define GEN_PASS_CLASSES
 #include "Passes.h.inc"
 
-} // hls
 } // namespace catherine
 } // namespace mlir
 

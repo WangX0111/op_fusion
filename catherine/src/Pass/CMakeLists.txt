@@ -1,8 +1,6 @@
-# set(LLVM_TARGET_DEFINITIONS Passes.td)
-# mlir_tablegen(Passes.h.inc -gen-pass-decls -name Passes)
-# # mlir_tablegen(Transforms.capi.h.inc -gen-pass-capi-header --prefix Transforms)
-# # mlir_tablegen(Transforms.capi.cpp.inc -gen-pass-capi-impl --prefix Transforms)
-# add_public_tablegen_target(KatePassesIncGen)
+set(LLVM_TARGET_DEFINITIONS Passes.td)
+mlir_tablegen(Passes.h.inc -gen-pass-decls)
+add_public_tablegen_target(CatherinePassesIncGen)
 
 # # add_mlir_doc(Passes GeneralPasses ./ -gen-pass-doc)
 
@@ -12,3 +10,18 @@
 # #     # Set target language
 # #     LINKER_LANGUAGE C
 # # )
+
+# file(GLOB globbed *.cpp)
+
+add_mlir_dialect_library(CatherinePasses
+  # ${globbed}
+  Passes.cpp
+
+  DEPENDS
+  MLIRHLSIncGen
+  CatherinePassesIncGen
+
+  LINK_LIBS PUBLIC
+  MLIRPass
+
+  )
