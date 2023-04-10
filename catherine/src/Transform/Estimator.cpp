@@ -9,101 +9,178 @@
 #include <mlir/IR/Operation.h>
 #include "mlir/IR/BuiltinOps.h"
 
+#include "Estimator.h"
 #include "Dialect/HLS/HLS.h"
 #include "Passes.h"
 #include "INIReader.h"
+// #include "Dialect/HLS/Visitor.h"
 
+using namespace std;
 using namespace mlir;
 using namespace catherine;
 using namespace hls;
 
 
-namespace {
-class Estimator {
-public:
-  explicit Estimator(std::string toolConfigPath, std::string opLatencyPath) {
-    llvm::outs() << toolConfigPath;
-    INIReader toolConfig(toolConfigPath);
-    if (toolConfig.ParseError())
-      llvm::outs() << "error: Tool configuration file parse fail.\n";
+
+//===----------------------------------------------------------------------===//
+// HLSAnalyzer Class Definition
+//===----------------------------------------------------------------------===//
+
+bool HLSAnalyzer::visitOp(AffineForOp op) { return true; }
+
+bool HLSAnalyzer::visitOp(AffineParallelOp op) { return true; }
+
+bool HLSAnalyzer::visitOp(AffineIfOp op) { return true; }
+
+/// This method will update all parameters except IterLatency, Latency, LUT,
+/// BRAM, and DSP through static analysis.
+void HLSAnalyzer::analyzeOperation(Operation *op) {
+  if (dispatchVisitor(op))
+    return;
+
+  op->emitError("can't be correctly analyzed.");
+}
+
+void HLSAnalyzer::analyzeFunc(func::FuncOp func) { procParam.init(func); }
+
+void HLSAnalyzer::analyzeBlock(Block &block) {
+  for (auto &op : block)
+    analyzeOperation(&op);
+}
+
+/// This method is a wrapper for recursively calling operation analyzer.
+void HLSAnalyzer::analyzeModule(ModuleOp module) {
+  for (auto &op : module) {
+    if (auto func = dyn_cast<func::FuncOp>(op)) {
+      analyzeFunc(func);
+    } else 
+      op.emitError("is unsupported operation.");
+  }
+}
+
+//===----------------------------------------------------------------------===//
+// Estimator Class Definition
+//===----------------------------------------------------------------------===//
+
+Estimator::Estimator(ProcParam &procParam, MemParam &memParam,
+                           string targetSpecPath, string opLatencyPath)
+                           : procParam(procParam), memParam(memParam)  {
+    llvm::outs() << targetSpecPath;
+    INIReader targetSpec(targetSpecPath);
+    if (targetSpec.ParseError())
+      llvm::outs() << "error: targetSpec file parse fail.\n";
 
     INIReader opLatency(opLatencyPath);
     if (opLatency.ParseError())
       llvm::outs() << "error: Op latency file parse fail.\n";
 
-    auto freq = toolConfig.Get("config", "frequency", "200MHz");
+    auto freq = targetSpec.Get("config", "frequency", "200MHz");
     auto latency = opLatency.GetInteger(freq, "op", 0);
     llvm::outs() << latency << "\n";
   }
 
-  void estimateLoop(AffineForOp loop);
-  void estimateFunc(func::FuncOp func);
-  void estimateModule(ModuleOp module);
 
-private:
-};
-} // namespace
-
-// 用于估计一个 AffineForOp 循环的延迟（latency）。
-// 方法首先检查循环体内有且只有一个基本块，且该基本块的第一个操作必须是 LoopParamOp（用于定义循环参数的操作）。如果不符合这些条件，则发出错误信息并返回。
-// 接下来，方法迭代遍历循环体中的操作，如果发现某个操作是 AffineForOp，则递归估计该子循环的延迟，并将其加到当前循环的延迟中。
-// 最后，如果循环未被完全展开，则计算最终延迟并设置 LoopParamOp 的 "latency" 属性。否则，将不会计算延迟，因为展开后的循环延迟是已知的。
-void Estimator::estimateLoop(AffineForOp loop) {
-  auto &body = loop.getLoopBody();
+// 首先递归地评估循环体中的子元素的延迟，
+// 然后计算循环的迭代延迟。
+// 迭代延迟是指执行循环体中的一次迭代所需的时间，
+// 而循环的总延迟则考虑了循环的迭代次数和展开因子。
+// 最终，函数将迭代延迟和循环延迟保存在ProcParam对象中，
+// 以供后续的优化使用。
+bool Estimator::visitOp(AffineForOp op) {
+  auto &body = op.getLoopBody();
   if (body.getBlocks().size() != 1)
-    loop.emitError("has zero or more than one basic blocks.");
-
-  auto paramOp = dyn_cast<hls::LoopParamOp>(body.front().front());
-  if (!paramOp) {
-    loop.emitError("doesn't have parameter operations as front.");
-    return;
-  }
-
-  // TODO: a simple AEAP scheduling.
-  unsigned iterLatency = paramOp.getNonprocLatency();
-  for (auto &op : body.front()) {
-    if (auto subLoop = dyn_cast<mlir::AffineForOp>(op)) {
-      estimateLoop(subLoop);
-      auto subParamOp =
-          dyn_cast<hls::LoopParamOp>(subLoop.getLoopBody().front().front());
-      iterLatency += subParamOp.getLatency();
-    }
-  }
-
-  unsigned latency = iterLatency;
-  // When loop is not completely unrolled.
-  if (paramOp.getLoopBound() > 1)
-    latency = iterLatency * paramOp.getLoopBound() * paramOp.getUnrollFactor();
-  auto builder = Builder(paramOp.getContext());
-  // paramOp.setAttr("latency", builder.getUI32IntegerAttr(latency));
-  paramOp.setLatency( latency);
-}
-
-/// For now, function pipelining and task-level dataflow optimizations are not
-/// considered for simplicity.
-void Estimator::estimateFunc(func::FuncOp func) {
-  if (func.getBlocks().size() != 1)
-    func.emitError("has zero or more than one basic blocks.");
-
-  auto paramOp = dyn_cast<FuncParamOp>(func.front().front());
-  if (!paramOp) {
-    func.emitError("doesn't have parameter operations as front.");
-    return;
-  }
+    op.emitError("has zero or more than one basic blocks.");
 
   // Recursively estimate latency of sub-elements, including functions and
   // loops. These sub-elements will be considered as a normal node in the CDFG
   // for function latency estimzation.
-  for (auto &op : func.front()) {
-    if (auto subFunc = dyn_cast<func::FuncOp>(op))
-      estimateFunc(subFunc);
-    else if (auto subLoop = dyn_cast<AffineForOp>(op))
-      estimateLoop(subLoop);
+  for (auto &op : body.front()) {
+    estimateOperation(&op);
   }
 
-  // Estimate function latency.
-  for (auto &op : func.front()) {
+  // Estimate iteration latency.
+  unsigned iterLatency = searchLongestPath(body.front());
+  procParam.set(op, ProcParamKind::IterLatency, iterLatency);
+
+  // Estimate affine for loop latency.
+  unsigned latency = iterLatency;
+  if (procParam.get(op, ProcParamKind::LoopBound) != 1)
+    latency *= procParam.get(op, ProcParamKind::LoopBound) *
+               procParam.get(op, ProcParamKind::UnrollFactor);
+  procParam.set(op, ProcParamKind::Latency, latency);
+}
+
+
+bool Estimator::visitOp(AffineParallelOp op) { return true; }
+
+bool Estimator::visitOp(AffineIfOp op) { return true; }
+
+/// This method recursively update the time stamp of all values (1) directly
+/// generated as result by the current operation or (2) generated by any
+/// operations insided of the region held by the current operation.
+void Estimator::updateValueTimeStamp(
+    Operation *currentOp, unsigned opTimeStamp,
+    DenseMap<Value, unsigned> &valueTimeStampMap) {
+  for (auto result : currentOp->getResults())
+    valueTimeStampMap[result] = opTimeStamp;
+  for (auto &region : currentOp->getRegions()) {
+    for (auto &op : region.front())
+      updateValueTimeStamp(&op, opTimeStamp, valueTimeStampMap);
   }
+}
+
+/// This method will search the longest path in a DAG block using a ASAP (As
+/// Soon As Possible) manner. Loop, function, if, and other operation owning
+/// regions will be considered as a whole.
+unsigned Estimator::searchLongestPath(Block &block) {
+  DenseMap<Value, unsigned> valueTimeStampMap;
+  unsigned blockTimeStamp = 0;
+
+  for (auto &op : block) {
+    unsigned opTimeStamp = 0;
+
+    // Add the latest ready time among all predecessors.
+    for (auto operand : op.getOperands())
+      opTimeStamp = max(opTimeStamp, valueTimeStampMap[operand]);
+
+    // Add latency of the current operation.
+    if (auto subAffineFor = dyn_cast<AffineForOp>(op))
+      opTimeStamp += procParam.get(subAffineFor, ProcParamKind::Latency);
+    else
+      opTimeStamp += 1;
+    blockTimeStamp = max(blockTimeStamp, opTimeStamp);
+
+    // Update ready time of each value generated by the current operation.
+    updateValueTimeStamp(&op, opTimeStamp, valueTimeStampMap);
+  }
+  return blockTimeStamp;
+}
+
+void Estimator::estimateOperation(Operation *op) {
+  if (dispatchVisitor(op))
+    return;
+
+  op->emitError("can't be correctly estimated.");
+}
+
+/// For now, function pipelining and task-level dataflow optimizations are not
+/// considered for simplicity.
+// 
+// This method will update ProcParam::Latency of the current function.
+void Estimator::estimateFunc(func::FuncOp func) {
+  if (func.getBlocks().size() != 1)
+    func.emitError("has zero or more than one basic blocks.");
+
+  estimateBlock(func.front());
+
+  // Estimate function latency.
+  unsigned latency = searchLongestPath(func.front());
+  procParam.set(func, ProcParamKind::Latency, latency);
+}
+
+void Estimator::estimateBlock(Block &block) {
+  for (auto &op : block)
+    estimateOperation(&op);
 }
 
 void Estimator::estimateModule(ModuleOp module) {
@@ -117,11 +194,27 @@ void Estimator::estimateModule(ModuleOp module) {
   }
 }
 
+
+//===----------------------------------------------------------------------===//
+// Entry of opt
+//===----------------------------------------------------------------------===//
+
 namespace {
 struct Estimation : public EstimationBase<Estimation> {
   Estimation() = default;
   void runOnOperation() override {
-    Estimator(toolConfig, opLatency).estimateModule(getOperation());
+    ProcParam procParam;
+    MemParam memParam;
+
+    // Extract all static parameters and current pragma configurations.
+    HLSAnalyzer analyzer(procParam, memParam);
+    analyzer.analyzeModule(getOperation());
+
+    // Estimate performance and resource utilization.
+    Estimator estimator(analyzer.procParam, analyzer.memParam, targetSpec,
+                           opLatency);
+    estimator.estimateModule(getOperation());
+
   }
 };
 } // namespace

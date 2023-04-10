@@ -1,0 +1,194 @@
+-- The CXX compiler identification is GNU 9.4.0
+-- The C compiler identification is GNU 9.4.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Found ZLIB: /usr/lib/x86_64-linux-gnu/libz.so (found version "1.2.11") 
+-- Using MLIRConfig.cmake in: ../../../llvm/build/lib/cmake/mlir
+-- Using LLVMConfig.cmake in: /home/ustc/llvm/build/lib/cmake/llvm
+-- Linker detection: GNU ld
+-- Performing Test C_SUPPORTS_FPIC
+-- Performing Test C_SUPPORTS_FPIC - Success
+-- Performing Test CXX_SUPPORTS_FPIC
+-- Performing Test CXX_SUPPORTS_FPIC - Success
+-- Building with -fPIC
+-- Performing Test C_SUPPORTS_FNO_SEMANTIC_INTERPOSITION
+-- Performing Test C_SUPPORTS_FNO_SEMANTIC_INTERPOSITION - Success
+-- Performing Test CXX_SUPPORTS_FNO_SEMANTIC_INTERPOSITION
+-- Performing Test CXX_SUPPORTS_FNO_SEMANTIC_INTERPOSITION - Success
+-- Performing Test SUPPORTS_FVISIBILITY_INLINES_HIDDEN_FLAG
+-- Performing Test SUPPORTS_FVISIBILITY_INLINES_HIDDEN_FLAG - Success
+-- Performing Test C_SUPPORTS_WERROR_DATE_TIME
+-- Performing Test C_SUPPORTS_WERROR_DATE_TIME - Success
+-- Performing Test CXX_SUPPORTS_WERROR_DATE_TIME
+-- Performing Test CXX_SUPPORTS_WERROR_DATE_TIME - Success
+-- Performing Test C_SUPPORTS_WERROR_UNGUARDED_AVAILABILITY_NEW
+-- Performing Test C_SUPPORTS_WERROR_UNGUARDED_AVAILABILITY_NEW - Failed
+-- Performing Test CXX_SUPPORTS_WERROR_UNGUARDED_AVAILABILITY_NEW
+-- Performing Test CXX_SUPPORTS_WERROR_UNGUARDED_AVAILABILITY_NEW - Failed
+-- Performing Test CXX_SUPPORTS_MISSING_FIELD_INITIALIZERS_FLAG
+-- Performing Test CXX_SUPPORTS_MISSING_FIELD_INITIALIZERS_FLAG - Success
+-- Performing Test C_SUPPORTS_IMPLICIT_FALLTHROUGH_FLAG
+-- Performing Test C_SUPPORTS_IMPLICIT_FALLTHROUGH_FLAG - Success
+-- Performing Test CXX_SUPPORTS_IMPLICIT_FALLTHROUGH_FLAG
+-- Performing Test CXX_SUPPORTS_IMPLICIT_FALLTHROUGH_FLAG - Success
+-- Performing Test C_SUPPORTS_COVERED_SWITCH_DEFAULT_FLAG
+-- Performing Test C_SUPPORTS_COVERED_SWITCH_DEFAULT_FLAG - Failed
+-- Performing Test CXX_SUPPORTS_COVERED_SWITCH_DEFAULT_FLAG
+-- Performing Test CXX_SUPPORTS_COVERED_SWITCH_DEFAULT_FLAG - Failed
+-- Performing Test CXX_SUPPORTS_CLASS_MEMACCESS_FLAG
+-- Performing Test CXX_SUPPORTS_CLASS_MEMACCESS_FLAG - Success
+-- Performing Test CXX_SUPPORTS_REDUNDANT_MOVE_FLAG
+-- Performing Test CXX_SUPPORTS_REDUNDANT_MOVE_FLAG - Success
+-- Performing Test CXX_SUPPORTS_PESSIMIZING_MOVE_FLAG
+-- Performing Test CXX_SUPPORTS_PESSIMIZING_MOVE_FLAG - Success
+-- Performing Test CXX_SUPPORTS_NOEXCEPT_TYPE_FLAG
+-- Performing Test CXX_SUPPORTS_NOEXCEPT_TYPE_FLAG - Success
+-- Performing Test CXX_WONT_WARN_ON_FINAL_NONVIRTUALDTOR
+-- Performing Test CXX_WONT_WARN_ON_FINAL_NONVIRTUALDTOR - Failed
+-- Performing Test CXX_SUPPORTS_SUGGEST_OVERRIDE_FLAG
+-- Performing Test CXX_SUPPORTS_SUGGEST_OVERRIDE_FLAG - Success
+-- Performing Test CXX_WSUGGEST_OVERRIDE_ALLOWS_ONLY_FINAL
+-- Performing Test CXX_WSUGGEST_OVERRIDE_ALLOWS_ONLY_FINAL - Success
+-- Performing Test C_WCOMMENT_ALLOWS_LINE_WRAP
+-- Performing Test C_WCOMMENT_ALLOWS_LINE_WRAP - Failed
+-- Performing Test C_SUPPORTS_STRING_CONVERSION_FLAG
+-- Performing Test C_SUPPORTS_STRING_CONVERSION_FLAG - Failed
+-- Performing Test CXX_SUPPORTS_STRING_CONVERSION_FLAG
+-- Performing Test CXX_SUPPORTS_STRING_CONVERSION_FLAG - Failed
+-- Performing Test CXX_SUPPORTS_MISLEADING_INDENTATION_FLAG
+-- Performing Test CXX_SUPPORTS_MISLEADING_INDENTATION_FLAG - Success
+-- Performing Test C_SUPPORTS_CTAD_MAYBE_UNSPPORTED_FLAG
+-- Performing Test C_SUPPORTS_CTAD_MAYBE_UNSPPORTED_FLAG - Failed
+-- Performing Test CXX_SUPPORTS_CTAD_MAYBE_UNSPPORTED_FLAG
+-- Performing Test CXX_SUPPORTS_CTAD_MAYBE_UNSPPORTED_FLAG - Failed
+-- Performing Test LINKER_SUPPORTS_COLOR_DIAGNOSTICS
+-- Performing Test LINKER_SUPPORTS_COLOR_DIAGNOSTICS - Failed
+-- Looking for os_signpost_interval_begin
+-- Looking for os_signpost_interval_begin - not found
+-- PROJECT_INCLUDE_DIR in: /home/ustc/wang/op_fusion/catherine/src/
+-- CMAKE_CURRENT_BINARY_DIR in: /home/ustc/wang/op_fusion/catherine/build
+-- Performing Test BLIS_TEST_RUNS
+-- Performing Test BLIS_TEST_RUNS - Success
+-- Found BLIS: /usr/local/lib/libblis.a  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/ustc/wang/op_fusion/catherine/build
+[1/16] Building Passes.h.inc...
+[2/16] Building HLSInterfaces.h.inc...
+[3/16] Building HLSInterfaces.cpp.inc...
+[4/16] Building HLSTypes.h.inc...
+[5/16] Building HLSTypes.cpp.inc...
+[6/16] Building HLSDialect.h.inc...
+[7/16] Building HLSDialect.cpp.inc...
+[8/16] Building HLS.cpp.inc...
+[9/16] Building HLS.h.inc...
+[10/16] Building CXX object src/Dialect/HLS/CMakeFiles/obj.CatherineHLS.dir/HLS.cpp.o
+[11/16] Linking CXX static library lib/libCatherineHLS.a
+[12/16] Building CXX object src/Transform/CMakeFiles/obj.CatherineTransforms.dir/Passes.cpp.o
+[13/16] Building CXX object src/Transform/CMakeFiles/obj.CatherineTransforms.dir/Estimator.cpp.o
+FAILED: src/Transform/CMakeFiles/obj.CatherineTransforms.dir/Estimator.cpp.o 
+/usr/bin/c++ -D_DEBUG -D_GLIBCXX_ASSERTIONS -D_LIBCPP_ENABLE_ASSERTIONS -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -I/home/ustc/wang/op_fusion/catherine/src -I/home/ustc/wang/op_fusion/catherine/src/Pass -I/home/ustc/wang/op_fusion/catherine/src/Dialect -I/home/ustc/wang/op_fusion/catherine/src/Transform -I/home/ustc/wang/op_fusion/catherine/build/src -I/home/ustc/wang/op_fusion/catherine/build/src/Dialect -I/home/ustc/wang/op_fusion/catherine/build/src/Pass -I/home/ustc/wang/op_fusion/catherine/build/src/Transform -I/home/ustc/wang/op_fusion/catherine/thirdparty/include -I/home/ustc/llvm/llvm/include -I/home/ustc/llvm/build/include -I/home/ustc/llvm/mlir/include -I/home/ustc/llvm/build/tools/mlir/include -I/home/ustc/wang/op_fusion/catherine/third_party/onnx-mlir/include -I/usr/local/include/blis -fPIC -fno-semantic-interposition -fvisibility-inlines-hidden -Werror=date-time -Wall -Wextra -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -Wimplicit-fallthrough -Wno-class-memaccess -Wno-redundant-move -Wno-pessimizing-move -Wno-noexcept-type -Wdelete-non-virtual-dtor -Wsuggest-override -Wno-comment -Wno-misleading-indentation -fdiagnostics-color -g   -D_DEBUG -D_GLIBCXX_ASSERTIONS -D_LIBCPP_ENABLE_ASSERTIONS -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS  -fno-exceptions -std=gnu++17 -MD -MT src/Transform/CMakeFiles/obj.CatherineTransforms.dir/Estimator.cpp.o -MF src/Transform/CMakeFiles/obj.CatherineTransforms.dir/Estimator.cpp.o.d -o src/Transform/CMakeFiles/obj.CatherineTransforms.dir/Estimator.cpp.o -c /home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp: In member function 'bool mlir::catherine::Estimator::visitOp(mlir::AffineForOp)':
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:103:17: error: 'op' was not declared in this scope
+  103 |   procParam.set(op, ProcParamKind::IterLatency, iterLatency);
+      |                 ^~
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:111:1: warning: no return statement in function returning non-void [-Wreturn-type]
+  111 | }
+      | ^
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp: At global scope:
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:170:36: error: variable or field 'estimateFunc' declared void
+  170 | void Estimator::estimateFunc(func::func::FuncOp func) {
+      |                                    ^~~~
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:170:36: error: 'mlir::func::func' has not been declared
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp: In member function 'void mlir::catherine::Estimator::estimateModule(mlir::ModuleOp)':
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:188:36: error: 'func' is not a member of 'mlir::func'; did you mean 'mlir::func'?
+  188 |     if (auto func = dyn_cast<func::func::FuncOp>(op))
+      |                                    ^~~~
+In file included from /home/ustc/llvm/mlir/include/mlir/Dialect/Func/IR/FuncOps.h:28,
+                 from /home/ustc/wang/op_fusion/catherine/src/InitAllDialects.h:14,
+                 from /home/ustc/wang/op_fusion/catherine/src/Dialect/HLS/Visitor.h:8,
+                 from /home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.h:11,
+                 from /home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:12:
+/home/ustc/llvm/build/tools/mlir/include/mlir/Dialect/Func/IR/FuncOps.h.inc:12:11: note: 'mlir::func' declared here
+   12 | namespace func {
+      |           ^~~~
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:188:21: error: parse error in template argument list
+  188 |     if (auto func = dyn_cast<func::func::FuncOp>(op))
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:188:52: error: no matching function for call to 'dyn_cast<<expression error> >(mlir::Operation&)'
+  188 |     if (auto func = dyn_cast<func::func::FuncOp>(op))
+      |                                                    ^
+In file included from /home/ustc/llvm/mlir/include/mlir/Support/LLVM.h:24,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/MLIRContext.h:12,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/TypeSupport.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Types.h:12,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Value.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/BlockSupport.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Block.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Operation.h:16,
+                 from /home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:9:
+/home/ustc/llvm/llvm/include/llvm/Support/Casting.h:668:37: note: candidate: 'template<class To, class From> decltype(auto) llvm::dyn_cast(std::unique_ptr<From>&&)'
+  668 | [[nodiscard]] inline decltype(auto) dyn_cast(std::unique_ptr<From> &&Val) {
+      |                                     ^~~~~~~~
+/home/ustc/llvm/llvm/include/llvm/Support/Casting.h:668:37: note:   template argument deduction/substitution failed:
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:188:52: error: template argument 1 is invalid
+  188 |     if (auto func = dyn_cast<func::func::FuncOp>(op))
+      |                                                    ^
+In file included from /home/ustc/llvm/mlir/include/mlir/Support/LLVM.h:24,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/MLIRContext.h:12,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/TypeSupport.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Types.h:12,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Value.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/BlockSupport.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Block.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Operation.h:16,
+                 from /home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:9:
+/home/ustc/llvm/llvm/include/llvm/Support/Casting.h:662:37: note: candidate: 'template<class To, class From> decltype(auto) llvm::dyn_cast(From*)'
+  662 | [[nodiscard]] inline decltype(auto) dyn_cast(From *Val) {
+      |                                     ^~~~~~~~
+/home/ustc/llvm/llvm/include/llvm/Support/Casting.h:662:37: note:   template argument deduction/substitution failed:
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:188:52: error: template argument 1 is invalid
+  188 |     if (auto func = dyn_cast<func::func::FuncOp>(op))
+      |                                                    ^
+In file included from /home/ustc/llvm/mlir/include/mlir/Support/LLVM.h:24,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/MLIRContext.h:12,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/TypeSupport.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Types.h:12,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Value.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/BlockSupport.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Block.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Operation.h:16,
+                 from /home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:9:
+/home/ustc/llvm/llvm/include/llvm/Support/Casting.h:656:37: note: candidate: 'template<class To, class From> decltype(auto) llvm::dyn_cast(From&)'
+  656 | [[nodiscard]] inline decltype(auto) dyn_cast(From &Val) {
+      |                                     ^~~~~~~~
+/home/ustc/llvm/llvm/include/llvm/Support/Casting.h:656:37: note:   template argument deduction/substitution failed:
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:188:52: error: template argument 1 is invalid
+  188 |     if (auto func = dyn_cast<func::func::FuncOp>(op))
+      |                                                    ^
+In file included from /home/ustc/llvm/mlir/include/mlir/Support/LLVM.h:24,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/MLIRContext.h:12,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/TypeSupport.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Types.h:12,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Value.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/BlockSupport.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Block.h:16,
+                 from /home/ustc/llvm/mlir/include/mlir/IR/Operation.h:16,
+                 from /home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:9:
+/home/ustc/llvm/llvm/include/llvm/Support/Casting.h:650:37: note: candidate: 'template<class To, class From> decltype(auto) llvm::dyn_cast(const From&)'
+  650 | [[nodiscard]] inline decltype(auto) dyn_cast(const From &Val) {
+      |                                     ^~~~~~~~
+/home/ustc/llvm/llvm/include/llvm/Support/Casting.h:650:37: note:   template argument deduction/substitution failed:
+/home/ustc/wang/op_fusion/catherine/src/Transform/Estimator.cpp:188:52: error: template argument 1 is invalid
+  188 |     if (auto func = dyn_cast<func::func::FuncOp>(op))
+      |                                                    ^
+[14/16] Building CXX object tools/catherine-opt/CMakeFiles/catherine-opt.dir/catherine-opt.cpp.o
+ninja: build stopped: subcommand failed.

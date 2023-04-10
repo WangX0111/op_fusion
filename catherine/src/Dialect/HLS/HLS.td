@@ -24,11 +24,11 @@ def HLSDialect : Dialect {
 class HLSOp<string mnemonic, list<Trait> traits = []> :
     Op<HLSDialect, mnemonic, traits>;
 
-// include "Interfaces.td"
+include "Interfaces.td"
 
 // include "Attributes.td"
 
-include "ParamOps.td"
-// include "StructureOps.td"
+include "PragmaOps.td"
+include "StructureOps.td"
 
 #endif // DIALECT_HLS_DIALECT_H

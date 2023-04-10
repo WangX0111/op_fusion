@@ -2,10 +2,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef SCALEHLS_DIALECT_HLSCPP_STRUCTUREOPS_TD
-#define SCALEHLS_DIALECT_HLSCPP_STRUCTUREOPS_TD
+#ifndef CATHERINE_DIALECT_HLSCPP_STRUCTUREOPS_TD
+#define CATHERINE_DIALECT_HLSCPP_STRUCTUREOPS_TD
 
-def AssignOp : HLSCppOp<"assign", [SameOperandsAndResultType]> {
+def AssignOp : HLSOp<"assign", [NoMemoryEffect]> {
   let summary = "Assign input value to the output";
   let description = [{
     This hlscpp.assign operation assigns the input value to the output, and can
@@ -18,11 +18,11 @@ def AssignOp : HLSCppOp<"assign", [SameOperandsAndResultType]> {
   let results = (outs AnyType : $output);
 }
 
-def EndOp : HLSCppOp<"end", [Terminator]> {
+def EndOp : HLSOp<"end", [Terminator]> {
   let summary = "Mark the end of a HLSCpp region";
   let description = [{
     This hlscpp.end operation marks the end of a region in the HLSCpp dialect.
   }];
 }
 
-#endif // SCALEHLS_DIALECT_HLSCPP_STRUCTUREOPS_TD
+#endif // CATHERINE_DIALECT_HLSCPP_STRUCTUREOPS_TD

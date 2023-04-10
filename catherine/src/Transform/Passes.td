@@ -41,9 +41,9 @@ def Estimation : Pass<"estimation", "mlir::ModuleOp"> {
   let constructor = "mlir::catherine::createEstimationPass()";
 
   let options = [
-    Option<"toolConfig", "tool-config", "std::string",
-           /*default=*/"\"../config/tool-config.ini\"", 
-           "Config file path: global configurations for the ScaleHLS tools">,
+    Option<"targetSpec", "target-spec", "std::string",
+           /*default=*/"\"../config/target-spec.ini\"", 
+           "File path: target backend specifications and configurations">,
     Option<"opLatency", "op-latency", "std::string",
            /*default=*/"\"../config/op-latency.ini\"", 
            "Config file path: profiling data for operation latency">
