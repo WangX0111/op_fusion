@@ -36,6 +36,7 @@ struct HLSDSEPipelineOptions
       llvm::cl::desc(
           "Config file path: profiling data for operation latency")};
 };
+
 } // namespace
 
 void catherine::registerHLSDSEPipeline() {
@@ -52,7 +53,11 @@ void catherine::registerHLSDSEPipeline() {
       });
 }
 
+
 void catherine::registerTransformsPasses() {
-    registerHLSDSEPipeline();
+    mlir::registerPass([]() -> std::unique_ptr<mlir::Pass> {
+      return createFusionPass();
+    });
+    // registerHLSDSEPipeline();
     registerPasses();
 }

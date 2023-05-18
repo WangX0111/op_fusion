@@ -10,6 +10,7 @@
 
 #include "mlir/Pass/Pass.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "llvm/ADT/ArrayRef.h"
 
 #include <memory>
 
@@ -22,14 +23,30 @@ class FuncOp;
 
 
 namespace mlir {
+
+class FuncOp;
+class FunctionPass;
+class ModuleOp;
+class Operation;
+template <typename T>
+class OperationPass;
+class Pass;
+
 namespace catherine {
 
 /// Creates a pass that performs mamul optimization.
 // std::unique_ptr<mlir::Pass> createMatmulOptPass();
-void registerHLSDSEPipeline();
-void registerTransformsPasses();
+std::unique_ptr<mlir::Pass> createFusionPass(
+    );
+
+
+std::unique_ptr<OperationPass<FuncOp>> createDiscFusionPass(
+    bool gpu_enabled = true, const std::string& fusion_strategy = "base");
 
 std::unique_ptr<Pass> createEstimationPass();
+
+void registerHLSDSEPipeline();
+void registerTransformsPasses();
 
 #define GEN_PASS_CLASSES
 #include "Passes.h.inc"

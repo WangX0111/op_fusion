@@ -2,3 +2,5 @@
 add_subdirectory(Dialect)
 # add_subdirectory(Pass)
 add_subdirectory(Transform)
+add_subdirectory(Utils)
+

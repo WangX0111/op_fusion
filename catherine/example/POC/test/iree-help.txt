@@ -1,0 +1,907 @@
+OVERVIEW: IREE modular optimizer driver
+
+Available Dialects: affine, arith, arm_neon, bufferization, builtin, cf, check, chlo, complex, emitc, flow, func, gpu, hal, hal_inline, hal_loader, iree_codegen, iree_input, iree_linalg_ext, iree_linalg_transform, linalg, llvm, math, memref, mhlo, ml_program, nvgpu, pdl, pdl_interp, quant, scf, shape, spirv, stablehlo, stream, tensor, tm_tensor, tosa, transform, util, vector, vk, vm, vmvx
+USAGE: iree-opt [options] <input file>
+
+OPTIONS:
+
+Color Options:
+
+  --color                                                               - Use colors in output (default=autodetect)
+
+General options:
+
+  --aarch64-neon-syntax=<value>                                         - Choose style of NEON code to emit from AArch64 backend:
+    =generic                                                            -   Emit generic NEON assembly
+    =apple                                                              -   Emit Apple-style NEON assembly
+  --aarch64-use-aa                                                      - Enable the use of AA during codegen.
+  --abort-on-max-devirt-iterations-reached                              - Abort when the max iterations for devirtualization CGSCC repeat pass is reached
+  --allow-ginsert-as-artifact                                           - Allow G_INSERT to be considered an artifact. Hack around AMDGPU test infinite loops.
+  --allow-unregistered-dialect                                          - Allow operation with no registered dialects
+  --arm-add-build-attributes                                            - 
+  --arm-implicit-it=<value>                                             - Allow conditional instructions outdside of an IT block
+    =always                                                             -   Accept in both ISAs, emit implicit ITs in Thumb
+    =never                                                              -   Warn in ARM, reject in Thumb
+    =arm                                                                -   Accept in ARM, reject in Thumb
+    =thumb                                                              -   Warn in ARM, emit implicit ITs in Thumb
+  --atomic-counter-update-promoted                                      - Do counter update using atomic fetch add  for promoted counters only
+  --atomic-first-counter                                                - Use atomic fetch add for first counter in a function (usually the entry counter)
+  --bounds-checking-single-trap                                         - Use one trap block per function
+  --cfg-hide-cold-paths=<number>                                        - Hide blocks with relative frequency below the given value
+  --cfg-hide-deoptimize-paths                                           - 
+  --cfg-hide-unreachable-paths                                          - 
+  --cost-kind=<value>                                                   - Target cost kind
+    =throughput                                                         -   Reciprocal throughput
+    =latency                                                            -   Instruction latency
+    =code-size                                                          -   Code size
+    =size-latency                                                       -   Code size and latency
+  --debug-info-correlate                                                - Use debug info to correlate profiles.
+  --debugify-func-limit=<ulong>                                         - Set max number of processed functions per pass.
+  --debugify-level=<value>                                              - Kind of debug info to add
+    =locations                                                          -   Locations only
+    =location+variables                                                 -   Locations and Variables
+  --debugify-quiet                                                      - Suppress verbose debugify output
+  --disable-i2p-p2i-opt                                                 - Disables inttoptr/ptrtoint roundtrip optimization
+  --do-counter-promotion                                                - Do counter register promotion
+  --dot-cfg-mssa=<file name for generated dot file>                     - file name for generated dot file
+  --dump-pass-pipeline                                                  - Print the pipeline that will be run
+  --emit-bytecode                                                       - Emit bytecode when generating output
+  --emscripten-cxx-exceptions-allowed=<string>                          - The list of function names in which Emscripten-style exception handling is enabled (see emscripten EMSCRIPTEN_CATCHING_ALLOWED options)
+  --enable-cse-in-irtranslator                                          - Should enable CSE in irtranslator
+  --enable-cse-in-legalizer                                             - Should enable CSE in Legalizer
+  --enable-emscripten-cxx-exceptions                                    - WebAssembly Emscripten-style exception handling
+  --enable-emscripten-sjlj                                              - WebAssembly Emscripten-style setjmp/longjmp handling
+  --enable-gvn-hoist                                                    - Enable the GVN hoisting pass (default = off)
+  --enable-gvn-memdep                                                   - 
+  --enable-gvn-sink                                                     - Enable the GVN sinking pass (default = off)
+  --enable-load-in-loop-pre                                             - 
+  --enable-load-pre                                                     - 
+  --enable-loop-simplifycfg-term-folding                                - 
+  --enable-name-compression                                             - Enable name/filename string compression
+  --enable-split-backedge-in-load-pre                                   - 
+  --experimental-debug-variable-locations                               - Use experimental new value-tracking variable locations
+  --fs-profile-debug-bw-threshold=<uint>                                - Only show debug message if the source branch weight is greater  than this value.
+  --fs-profile-debug-prob-diff-threshold=<uint>                         - Only show debug message if the branch probility is greater than this value (in percentage).
+  --generate-merged-base-profiles                                       - When generating nested context-sensitive profiles, always generate extra base profile for function with all its context profiles merged into it.
+  --hash-based-counter-split                                            - Rename counter variable of a comdat function based on cfg hash
+  --hot-cold-split                                                      - Enable hot-cold splitting pass
+  --import-all-index                                                    - Import all external functions in index.
+  --instcombine-code-sinking                                            - Enable code sinking
+  --instcombine-guard-widening-window=<uint>                            - How wide an instruction window to bypass looking for another guard
+  --instcombine-max-num-phis=<uint>                                     - Maximum number phis to handle in intptr/ptrint folding
+  --instcombine-max-sink-users=<uint>                                   - Maximum number of undroppable users for instruction sinking
+  --instcombine-maxarray-size=<uint>                                    - Maximum array size considered when doing a combine
+  --instcombine-negator-enabled                                         - Should we attempt to sink negations?
+  --instcombine-negator-max-depth=<uint>                                - What is the maximal lookup depth when trying to check for viability of negation sinking.
+  --instrprof-atomic-counter-update-all                                 - Make all profile counter updates atomic (for testing only)
+  --internalize-public-api-file=<filename>                              - A file containing list of symbol names to preserve
+  --internalize-public-api-list=<list>                                  - A list of symbol names to preserve
+  --iree-codegen-check-ir-before-llvm-conversion                        - Runs the pass to check the IR generated from LLVMCPU before conversion to LLVM IR
+  --iree-codegen-enable-vector-padding                                  - Enable padding for vectorization
+  --iree-codegen-enable-vector-peeling                                  - Enable peeling for vectorization
+  --iree-codegen-enable-workgroup-specialization                        - Enable workgroup specialization.
+  --iree-codegen-gpu-native-math-precision                              - Skip polynomial lowering for math op natively available on GPU
+  --iree-codegen-llvm-generic-ops-workgroup-size=<int>                  - linalg.generic and linalg.indexed_generic workgroup tile size
+  --iree-codegen-llvm-generic-ops-workgroup-size-for-unpack-op=<int>    - Like iree-codegen-llvm-generic-ops-workgroup-size but specifically for UnpackOp
+  --iree-codegen-llvm-mmt4d-l1-tile-size=<int>                          - linalg.mmt4d L1 tile size
+  --iree-codegen-llvm-mmt4d-vector-size=<int>                           - linalg.mmt4d vector tile size
+  --iree-codegen-llvm-mmt4d-workgroup-tile-sizes=<int>                  - linalg.mmt4d workgroup tile size
+  --iree-codegen-llvm-number-of-threads=<int>                           - number of threads that are used at runtime
+  --iree-codegen-llvm-vector-size-in-bytes=<int>                        - native vector size to use on the hardware
+  --iree-codegen-llvm-verbose-debug-info                                - Emit verbose debug information in LLVM IR.
+  --iree-codegen-llvmcpu-enable-transform-dialect-jit                   - enable the usage of the transform dialect JIT
+  --iree-codegen-llvmcpu-transform-dialect-debug-payload-tag=<string>   - tag attribute value for the transform dialect interpreter payload root operation
+  --iree-codegen-llvmcpu-transform-dialect-debug-transform-tag=<string> - tag attribute value for the transform dialect transform op container
+  --iree-codegen-llvmcpu-use-transform-dialect=<string>                 - MLIR file containing a transform dialect specification to apply
+  --iree-codegen-llvmgpu-enable-transform-dialect-jit                   - enable the usage of the transform dialect JIT
+  --iree-codegen-llvmgpu-transform-dialect-debug-payload-tag=<string>   - tag attribute value for the transform dialect interpreter payload root operation
+  --iree-codegen-llvmgpu-transform-dialect-debug-transform-tag=<string> - tag attribute value for the transform dialect transform op container
+  --iree-codegen-llvmgpu-use-mma-sync                                   - use mma sync instead of wmma ops
+  --iree-codegen-llvmgpu-use-transform-dialect=<string>                 - MLIR file containing a transform dialect specification to apply
+  --iree-codegen-log-swizzle-tile=<uint>                                - log swizzle tile value
+  --iree-codegen-mmt4d-use-intrinsics                                   - Whether to use instrinsics when lowering vector contracts generated from mmt4d matmuls (as opposed to inline asm). Not for production use.
+  --iree-flow-demote-f32-to-f16                                         - Converts all f32 ops and values into f16 counterparts unconditionally before main flow conversions.
+  --iree-flow-demote-f64-to-f32                                         - Converts all f64 ops and values into f32 counterparts unconditionally before main flow conversions.
+  --iree-flow-demote-i64-to-i32                                         - Converts all i64 ops and values into i32 counterparts unconditionally before main flow conversions.
+  --iree-flow-dispatch-generate-workload-region                         - Generate the workload region
+  --iree-flow-dispatch-use-transform-dialect=<string>                   - mlir file containing a top-level module that specifies the transformations to apply to form dispatch regions.
+  --iree-flow-dump-dispatch-graph                                       - Dump a dot graph for dispatches
+  --iree-flow-dump-dispatch-graph-output-file=<string>                  - Output file name for a dispatch graph dump
+  --iree-flow-enable-aggressive-fusion                                  - Enable the aggressive fusion heuristic to fuse multiuse ops and ops with reduction loops
+  --iree-flow-enable-data-tiling                                        - Enable data tiling path
+  --iree-flow-enable-fuse-padding-into-linalg-consumer-ops              - Enable fusing tensor.pad ops into Linalg consumer ops
+  --iree-flow-export-benchmark-funcs                                    - Exports one function per original module entry point and unique flow.executable that dispatches with dummy arguments.
+  --iree-flow-inline-constants-max-byte-length=<int>                    - Maximum byte-length of tensor constant that can be inlined into a dispatch region or 0 to disable inlining.
+  --iree-flow-normalize-input-indexing-map                              - Enable normalizing input indexing map to identity
+  --iree-flow-promote-bf16-to-f32                                       - Converts all bf16 ops and values into f32 counterparts unconditionally before main flow conversions.
+  --iree-flow-promote-f16-to-f32                                        - Converts all f16 ops and values into f32 counterparts unconditionally before main flow conversions.
+  --iree-flow-split-matmul-reduction=<long>                             - split ratio
+  --iree-flow-topk-split-reduction=<long>                               - comma separated list of split ratios
+  --iree-flow-trace-dispatch-tensors                                    - Trace runtime input/output tensors for each dispatch function.
+  --iree-flow-zero-fill-empty-tensors                                   - Zero fill empty tensors instead of leaving them uninitialized
+  --iree-hal-benchmark-dispatch-repeat-count=<uint>                     - The number of times to repeat each hal.command_buffer.dispatch op. This simply duplicates the dispatch op and inserts barriers. It's meant for command buffers having linear dispatch structures.
+  --iree-hal-cuda-disable-loop-nounroll-wa                              - Disable the workaround for bug in ptxas for CUDA version before 11.4.
+  --iree-hal-cuda-dump-ptx                                              - Dump ptx to the debug stream.
+  --iree-hal-cuda-llvm-target-arch=<string>                             - LLVM target chip.
+  --iree-hal-executable-object-search-path=<string>                     - Additional search paths for resolving #hal.executable.object file references.
+  --iree-hal-instrument-dispatches=<power of two byte size>             - Enables dispatch instrumentation with a power-of-two byte size used for storage (16mib, 64mib, 2gib, etc).
+  --iree-hal-preprocess-executables-with=<string>                       - Passes each hal.executable to the given command. Multiple commands may be specified and they will be executed in order. A command may either be a pass pipeline available within the IREE compiler specified as `builtin.module(...)` or a shell tool that consumes a hal.executable MLIR file on stdin and produces a modified hal.executable on stdout. Non-zero exit codes will fail compilation.
+  --iree-hal-substitute-executable-object=<string>                      - A `executable_name=object_file.xxx` pair specifying a hal.executable symbol name that will be substituted with the object file at the given path. Object paths are relative to those specified on `--iree-hal-executable-object-search-path=`. If a `.mlir` or `.mlirbc` file is specified the entire executable will be replaced with an equivalently named hal.executable in the referenced file and otherwise the executable will be externalized and link the referenced file (`.ptx`/`.spv`/etc).
+  --iree-hal-substitute-executable-objects-from=<string>                - Substitutes any hal.executable with a file in the given path with the same name ala `--iree-hal-substitute-executable-object=`.
+  --iree-hal-substitute-executable-source=<string>                      - A `executable_name=object_file.xxx` pair specifying a hal.executable symbol name that will be substituted with the source object file at the given path. Source object paths are relative to those specified on `--iree-hal-executable-object-search-path=`. If a `.mlir` or `.mlirbc` file is specified the entire executable will be replaced with an equivalently named hal.executable in the referenced file and otherwise the executable will be externalized and link the referenced file (`.ptx`/`.spv`/etc).
+  --iree-hal-substitute-executable-sources-from=<string>                - Substitutes any hal.executable with a file in the given path with the same name ala `--iree-hal-substitute-executable-source=`.
+  --iree-llvm-debug-symbols                                             - Generate and embed debug information (DWARF, PDB, etc)
+  --iree-llvm-embedded-linker-path=<string>                             - Tool used to link embedded ELFs produced by IREE (for --iree-llvm-link-embedded=true).
+  --iree-llvm-keep-linker-artifacts                                     - Keep LLVM linker target artifacts (.so/.dll/etc)
+  --iree-llvm-link-embedded                                             - Links binaries into a platform-agnostic ELF to be loaded by the embedded IREE ELF loader
+  --iree-llvm-link-static                                               - Links system libraries into binaries statically to isolate them from platform dependencies needed at runtime
+  --iree-llvm-list-targets                                              - Lists all registered targets that the LLVM backend can generate code for.
+  --iree-llvm-loop-interleaving                                         - Enable LLVM loop interleaving opt
+  --iree-llvm-loop-unrolling                                            - Enable LLVM loop unrolling opt
+  --iree-llvm-loop-vectorization                                        - Enable LLVM loop vectorization opt
+  --iree-llvm-sanitize=<value>                                          - Apply LLVM sanitize feature
+    =address                                                            -   Address sanitizer support
+    =thread                                                             -   Thread sanitizer support
+  --iree-llvm-slp-vectorization                                         - Enable LLVM SLP Vectorization opt
+  --iree-llvm-static-library-output-path=<string>                       - Path to output static object (EX: '/path/to/static-library.o'). This will produce the static library at the specified path along with a similarly named '.h' file for static linking.
+  --iree-llvm-system-linker-path=<string>                               - Tool used to link system shared libraries produced by IREE (for --iree-llvm-link-embedded=false).
+  --iree-llvm-target-abi=<string>                                       - LLVM target machine ABI; specify for -mabi
+  --iree-llvm-target-cpu=<string>                                       - LLVM target machine CPU; use 'host' for your host native CPU
+  --iree-llvm-target-cpu-features=<string>                              - LLVM target machine CPU features; use 'host' for your host native CPU
+  --iree-llvm-target-float-abi=<value>                                  - LLVM target codegen enables soft float abi e.g -mfloat-abi=softfp
+    =default                                                            -   Default (softfp)
+    =soft                                                               -   Software floating-point emulation
+    =hard                                                               -   Hardware floating-point instructions
+  --iree-llvm-target-triple=<string>                                    - LLVM target machine triple
+  --iree-llvm-wasm-linker-path=<string>                                 - Tool used to link WebAssembly modules produced by IREE (for --iree-llvm-target-triple=wasm32-*).
+  --iree-llvmcpu-check-linalg-vectorization                             - Runs the pass to check if all the Linalg ops are vectorized
+  --iree-llvmcpu-enable-hoist-padding                                   - Flag to enable hoist padding
+  --iree-llvmcpu-enable-pad-consumer-fusion                             - Flag to enable the fusion for pad + consumer
+  --iree-llvmcpu-enable-triple-tiling-pipeline                          - enable triple tiling expert for matmul kernels
+  --iree-llvmcpu-fail-on-out-of-bounds-stack-allocation                 - fail if the upper bound of dynamic stack allocation cannot be solved
+  --iree-llvmcpu-instrument-memory-accesses                             - Instruments memory accesses in dispatches when dispatch instrumentation is enabled.
+  Compiler passes to run
+    Passes:
+      --affine-data-copy-generate                                       -   Generate explicit copying for affine memory operations
+        --fast-mem-capacity=<ulong>                                     - Set fast memory space capacity in KiB (default: unlimited)
+        --fast-mem-space=<uint>                                         - Fast memory space identifier for copy generation (default: 1)
+        --generate-dma                                                  - Generate DMA instead of point-wise copy
+        --min-dma-transfer=<int>                                        - Minimum DMA transfer size supported by the target in bytes
+        --skip-non-unit-stride-loops                                    - Testing purposes: avoid non-unit stride loop choice depths for copy placement
+        --slow-mem-space=<uint>                                         - Slow memory space identifier for copy generation (default: 0)
+        --tag-mem-space=<uint>                                          - Tag memory space identifier for copy generation (default: 0)
+      --affine-expand-index-ops                                         -   Lower affine operations operating on indices into more fundamental operations
+      --affine-loop-coalescing                                          -   Coalesce nested loops with independent bounds into a single loop
+      --affine-loop-fusion                                              -   Fuse affine loop nests
+        --fusion-compute-tolerance=<number>                             - Fractional increase in additional computation tolerated while fusing
+        --fusion-fast-mem-space=<uint>                                  - Faster memory space number to promote fusion buffers to
+        --fusion-local-buf-threshold=<ulong>                            - Threshold size (KiB) for promoting local buffers to fast memory space
+        --fusion-maximal                                                - Enables maximal loop fusion
+        --mode=<value>                                                  - fusion mode to attempt
+    =greedy                                                       -   Perform greedy (both producer-consumer and sibling)  fusion
+    =producer                                                     -   Perform only producer-consumer fusion
+    =sibling                                                      -   Perform only sibling fusion
+      --affine-loop-invariant-code-motion                               -   Hoist loop invariant instructions outside of affine loops
+      --affine-loop-normalize                                           -   Apply normalization transformations to affine loop-like ops
+        --promote-single-iter                                           - Promote single iteration loops
+      --affine-loop-tile                                                -   Tile affine loop nests
+        --cache-size=<ulong>                                            - Set size of cache to tile for in KiB (default: 512)
+        --separate                                                      - Separate full and partial tiles (default: false)
+        --tile-size=<uint>                                              - Use this tile size for all loops
+        --tile-sizes=<uint>                                             - List of tile sizes for each perfect nest (overridden by -tile-size)
+      --affine-loop-unroll                                              -   Unroll affine loops
+        --cleanup-unroll                                                - Fully unroll the cleanup loop when possible.
+        --unroll-factor=<uint>                                          - Use this unroll factor for all loops being unrolled
+        --unroll-full                                                   - Fully unroll loops
+        --unroll-full-threshold=<uint>                                  - Unroll all loops with trip count less than or equal to this
+        --unroll-num-reps=<uint>                                        - Unroll innermost loops repeatedly this many times
+        --unroll-up-to-factor                                           - Allow unrolling up to the factor specified
+      --affine-loop-unroll-jam                                          -   Unroll and jam affine loops
+        --unroll-jam-factor=<uint>                                      - Use this unroll jam factor for all loops (default 4)
+      --affine-parallelize                                              -   Convert affine.for ops into 1-D affine.parallel
+        --max-nested=<uint>                                             - Maximum number of nested parallel loops to produce. Defaults to unlimited (UINT_MAX).
+        --parallel-reductions                                           - Whether to parallelize reduction loops. Defaults to false.
+      --affine-pipeline-data-transfer                                   -   Pipeline non-blocking data transfers between explicitly managed levels of the memory hierarchy
+      --affine-scalrep                                                  -   Replace affine memref accesses by scalars by forwarding stores to loads and eliminating redundant loads
+      --affine-simplify-structures                                      -   Simplify affine expressions in maps/sets and normalize memrefs
+      --affine-super-vectorize                                          -   Vectorize to a target independent n-D vector abstraction
+        --test-fastest-varying=<long>                                   - Specify a 1-D, 2-D or 3-D pattern of fastest varying memory dimensions to match. See defaultPatterns in Vectorize.cpp for a description and examples. This is used for testing purposes
+        --vectorize-reductions                                          - Vectorize known reductions expressed via iter_args. Switched off by default.
+        --virtual-vector-size=<long>                                    - Specify an n-D virtual vector size for vectorization
+      --arm-neon-2d-to-intr                                             -   Convert Arm NEON structured ops to intrinsics
+      --canonicalize                                                    -   Canonicalize operations
+        --disable-patterns=<string>                                     - Labels of patterns that should be filtered out during application
+        --enable-patterns=<string>                                      - Labels of patterns that should be used during application, all other patterns are filtered out
+        --max-iterations=<long>                                         - Max. iterations between applying patterns / simplifying regions
+        --max-num-rewrites=<long>                                       - Max. number of pattern rewrites within an iteration
+        --region-simplify                                               - Perform control flow optimizations to the region tree
+        --test-convergence                                              - Test only: Fail pass on non-convergence to detect cyclic pattern
+        --top-down                                                      - Seed the worklist in general top-down order
+      --convert-cf-to-spirv                                             -   Convert ControlFlow dialect to SPIR-V dialect
+        --emulate-lt-32-bit-scalar-types                                - Emulate narrower scalar types with 32-bit ones if not supported by the target
+      --convert-elementwise-to-linalg                                   -   Convert ElementwiseMappable ops to linalg
+      --convert-func-to-spirv                                           -   Convert Func dialect to SPIR-V dialect
+        --emulate-lt-32-bit-scalar-types                                - Emulate narrower scalar types with 32-bit ones if not supported by the target
+      --convert-gpu-to-spirv                                            -   Convert GPU dialect to SPIR-V dialect
+      --convert-linalg-to-affine-loops                                  -   Lower the operations from the linalg dialect into affine loops
+      --convert-linalg-to-loops                                         -   Lower the operations from the linalg dialect into loops
+      --convert-linalg-to-parallel-loops                                -   Lower the operations from the linalg dialect into parallel loops
+      --convert-scf-to-cf                                               -   Convert SCF dialect to ControlFlow dialect, replacing structured control flow with a CFG
+      --cse                                                             -   Eliminate common sub-expressions
+      --expand-strided-metadata                                         -   Expand memref operations into easier to analyze constructs
+      --fold-memref-alias-ops                                           -   Fold memref alias ops into consumer load/store ops
+      --inline                                                          -   Inline function calls
+        --default-pipeline=<string>                                     - The default optimizer pipeline used for callables
+        --max-iterations=<uint>                                         - Maximum number of iterations when inlining within an SCC
+        --op-pipelines=<pass-manager>                                   - Callable operation specific optimizer pipelines (in the form of `dialect.op(pipeline)`)
+      --iree-abi-wrap-entry-points                                      -   Wraps all entry points in a function that is compatible with the expected invocation semantics of bindings following the native IREE ABI.
+        --invocation-model=<value>                                      - Specifies the execution model used for invocations.
+    =sync                                                         -   Fully synchronous behavior with no fences.
+    =coarse-fences                                                -   Exposes one wait fence for all inputs and one signal fence for all outputs.
+      --iree-codegen-affinemin-scf-canonicalization                     -   Pass to run pass cleaning up affineMinOp after tiling and distribute.
+      --iree-codegen-bufferize-copy-only-dispatches                     -   Bufferize dispatches that copy to/from interfaces to convert to a linalg.copy op
+      --iree-codegen-canonicalize-scf-for                               -   Adhoc canonicalization of selected loop-carried values/dependencies for scf.for ops
+      --iree-codegen-cleanup-buffer-alloc-view                          -   Performs cleanups over HAL interface/buffer allocation/view operations
+      --iree-codegen-concretize-pad-result-shape                        -   Concretizes tensor.pad op's result shape if its source opimplements OffsetSizeAndStrideOpInterface.
+      --iree-codegen-convert-to-destination-passing-style               -   Transforms the code to make the dispatch use destination-passing style
+        --use-war-for-cooperative-matrix-codegen                        - WAR for failure in Cooperative matrix codegen pipelines. See #10648.
+      --iree-codegen-decompose-linalg-generic                           -   Decomposes linalg generic ops into individual ops
+      --iree-codegen-erase-hal-descriptor-type-from-memref              -   Erase #hal.descriptor_type from MemRef memory space
+      --iree-codegen-flatten-memref-subspan                             -   Flatten n-D MemRef subspan ops to 1-D ones and fold byte offsets
+      --iree-codegen-fold-affinemin-in-distributed-loops                -   Fold `affine.min` ops in distributed loops
+      --iree-codegen-fold-tensor-extract-op                             -   Fold `tensor.extract` operations prior to lowering to LLVM
+      --iree-codegen-fuse-tensor-pad-with-consumer                      -   Fuse tensor.pad op into its consumer op's tiled loop nest
+      --iree-codegen-gpu-tile-reduction                                 -   Pass to tile linalg reduction dimensions.
+      --iree-codegen-gpu-vectorization                                  -   Pass to convert linalg into Vector.
+        --generate-contract                                             - Try to convert reduction to vector.contract.
+        --max-vector-size=<long>                                        - Max vector size allowed to avoid creating large vectors.
+      --iree-codegen-instrument-memory-accesses                         -   Instruments memory reads and writes for address tracking when dispatch instrumentation is enabled.
+      --iree-codegen-iree-comprehensive-bufferize                       -   Convert from to Linalg ops on tensors to buffers
+        --print-conflicts                                               - Annotates IR with RaW conflicts. Requires test-analysis-only.
+        --test-analysis-only                                            - Only runs inplaceability analysis (for testing purposes only)
+      --iree-codegen-lower-ukernel-ops-to-calls                         -   Lower micro-kernel wrapper ops into function calls
+      --iree-codegen-memrefcopy-to-linalg                               -   Convert memref.copy to linalg op
+      --iree-codegen-optimize-vector-transfer                           -   Run optimization transformations on vector transfer operations
+        --flatten                                                       - Flatten the vector type of vector transfers where possible (contiguous row-major data).
+      --iree-codegen-pad-dynamic-alloc                                  -   Pass to pad dynamic alloc into static one.
+      --iree-codegen-polynomial-approximation                           -   Convert math operations to their polynomial approximation
+      --iree-codegen-reduction-to-gpu                                   -   Convert vector reduction to gpu ops.
+      --iree-codegen-rematerialize-parallel-ops                         -   Pass to rematerialize and merge parallel ops to avoid creating temporary allocs.
+      --iree-codegen-remove-single-iteration-loop                       -   Remove distributed loop with single iteration.
+      --iree-codegen-split-full-partial-transfer                        -   Split a vector.transfer operation into an in-bounds (i.e., no out-of-bounds masking) fastpath and a slowpath.
+        --split-transfers=<string>                                      - Split vector transfers between slow (masked) and fast (unmasked) variants. Possible options are:
+                                                                    	none [default]: keep unsplit vector.transfer and pay the price
+                                                                    	linalg-copy: use linalg.fill + linalg.generic for the slow path
+                                                                    	vector-transfers: use extra small unmasked vector.transfers for the slow path
+      --iree-codegen-test-executable-preprocessing                      -   Tests iree-hal-preprocess-executables-with behavior.
+      --iree-codegen-test-partitionable-loops-interface                 -   Test the PartitionableLoopsInterface
+      --iree-codegen-tile-and-distribute-to-workgroups                  -   Tile and distribute operations to workgroups
+      --iree-codegen-type-propagation                                   -   Propogate the type of tensor to avoid load/stores of illegal bit widths
+      --iree-codegen-vectorize-pack-unpack-ops                          -   Vectorize a very specific form of tensor.pad with control flows
+      --iree-codegen-vectorize-tensor-pad                               -   Vectorize a very specific form of tensor.pad with control flows
+      --iree-codegen-workgroup-specialization                           -   Specialize workgroup distribution loops
+      --iree-consteval-jit-globals                                      -   Jits global initializers and evaluates them into concrete values
+      --iree-convert-hal-to-vm                                          -   Convert the IREE HAL dialect to the IREE VM dialect
+      --iree-convert-to-llvm                                            -   Perform final conversion from Linalg/HAL/Shape/Vector/Standard to LLVMIR dialect
+        --reassociateFpReductions                                       - Specifies if FP add and mult reductions can be reordered
+        --target-data-layout=<string>                                   - Code generation target data layout.
+        --target-reassociate-fp-reductions                              - Code generation target reassociate FP reductions.
+        --target-triple=<string>                                        - Code generation target triple.
+      --iree-convert-to-nvvm                                            -   Perform final conversion from builtin/GPU/HAL/standard dialect to LLVM and NVVM dialects
+      --iree-convert-to-rocdl                                           -   Perform final conversion from builtin/GPU/HAL/standard dialect to LLVM and ROCDL dialects
+      --iree-convert-to-spirv                                           -   Perform the final conversion to SPIR-V dialect
+        --enable-fast-math                                              - Enable fast math mode during type conversion (i.e. assume no NaN/infinity)
+        --index-bits=<uint>                                             - Specify the bit widths for SPIR-V indices
+      --iree-convert-vm-to-emitc                                        -   Convert VM Ops to the EmitC dialect
+      --iree-eliminate-empty-tensors                                    -   Eliminate tensor.empty ops to avoid buffer allocations
+      --iree-flow-capture-dispatch-dynamic-dims                         -   Captures dynamic shape dimensions required by dispatch operands/results.
+      --iree-flow-cleanup-numeric-narrowing                             -   Cleans up any numeric narrowing ops inserted by iree-flow-infer-numeric-narrowing
+      --iree-flow-cleanup-tensor-shapes                                 -   Cleans up any remaining tensor shape metadata after lowering.
+      --iree-flow-collapse-dimensions                                   -   Collapse dimensions of Linalg Ops on tensor ops.
+      --iree-flow-collapse-dims                                         -   Collapse reduction dimensions when possible.
+      --iree-flow-convert-1x1-filter-conv2d-to-matmul                   -   Convert linalg convolution ops with 1x1 kernels into linalg matrix multiplication ops.
+      --iree-flow-convert-region-to-workgroups                          -   Convert DispatchRegion ops to Workgroups ops.
+      --iree-flow-convert-to-flow                                       -   Convert operations to flow. Currently just a test pass.
+      --iree-flow-deduplicate-executables                               -   Deduplicates executables that are identical
+      --iree-flow-detach-elementwise-from-named-ops                     -   Detaches elementwise ops from named Linalg ops
+      --iree-flow-dispatch-with-transform-dialect                       -   Dispatch Linalg operations on tensors by using the transform dialect interpreter
+        --debug-payload-root-tag=<string>                               - Select the operation with 'transform.iree_tag' attribute having the given value as payload IR root. This allows user control on what operation to transform in debug mode, without requiring intimate knowledge of the IREE nested pass pipeline.
+                                                                    If empty (normal operation mode), select the pass anchor operation in the IREE pipeline, as the payload IR root.
+        --debug-transform-root-tag=<string>                             - Select the operation with 'transform.iree_tag' attribute having the given value as container IR for top-level transform ops. This allows user control on what transformation to apply in debug mode, without requiring intimate knowledge of the IREE nested pass pipeline.
+                                                                    If empty (normal operation mode), select the container of the top-level transform op.
+        --transform-file-name=<string>                                  - Optional filename containing a transform dialect specification to apply. If left empty, the IR is assumed to contain one top-level transform dialect operation somewhere in the module.
+      --iree-flow-dump-dispatch-graph-pass                              -   Print visualization of dispatches
+        --max-label-len=<uint>                                          - Limit attribute/type length to number of chars
+        --print-attrs                                                   - Print attributes of operations
+        --print-control-flow-edges                                      - Print control flow edges
+        --print-data-flow-edges                                         - Print data flow edges
+        --print-result-types                                            - Print result types of operations
+      --iree-flow-erase-unused-linalg-operands                          -   Erase unused linalg operand and remove dead code.
+      --iree-flow-expand-tensor-shapes                                  -   Expands tensor shape dimensions into SSA values across the program.
+      --iree-flow-export-benchmark-funcs-pass                           -   Exports benchmark functions
+      --iree-flow-form-dispatch-regions                                 -   Form Dispatch Region Ops from Linalg operations on tensors to form dispatch.regions
+        --aggressive-fusion                                             - Fuse with aggressive heuristics
+        --genereate-workload-region                                     - Generate workload regions of WorkgroupOps
+      --iree-flow-form-dispatch-workgroups                              -   Form Dispatch Workgroup Ops from Dispatch Region Ops that contain Linalg on tensor ops by tiling and distribution.
+        --genereate-workload-region                                     - Generate workload regions of WorkgroupOps
+      --iree-flow-fusion-of-tensor-ops                                  -   Fuse operations on tensors
+        --fuse-multi-use                                                - Fuse ops with multiuse
+        --multi-use-fusion-iteration=<uint>                             - Number of iterations to fuse multiuse ops
+      --iree-flow-infer-numeric-narrowing                               -   Infers and inserts util.numeric.optional_narrow ops at points that may be beneficial
+      --iree-flow-initialize-empty-tensors                              -   Initialize empty tensors
+        --zero-fill                                                     - Fills empty tensors with zeros.
+      --iree-flow-inject-dispatch-tracing                               -   Injects dispatch region tracing.
+      --iree-flow-interchange-generic-ops                               -   Interchange generic op loops to have all the reduction loops to be inner loops.
+      --iree-flow-interchange-transpose-generic-ops                     -   Interchange transpose generic op loops to make the input indeximg map indentity.
+      --iree-flow-optimize-numerics                                     -   Optimizes numerics given annotations added via iree-flow-infer-numeric-narrowing
+      --iree-flow-outline-dispatch-regions                              -   Outlines dispatch regions into executables
+      --iree-flow-raise-special-ops                                     -   raise special ops like softmax to the high level linalg.ext representation
+      --iree-flow-set-encoding                                          -   Introduce tensor encoding for compute operations
+        --default-padding=<long>                                        - Default padding to use so packing can be done without padding during the packing
+      --iree-flow-split-reduction-ops                                   -   Split reduction dimension to increase parallelism.
+      --iree-flow-strip-and-splat-constant-variables                    -   Strips constant util.globals and replaces them with splats.
+      --iree-flow-strip-signedness                                      -   Legalizes ui tensors constants to uis
+      --iree-flow-tensor-pad-to-tensor-insert-slice                     -   Convert tensor.pad into linalg.fill + tensor.insert_slice
+        --skip-one-linalg-use-case                                      - Skip the op that has only one use which is usedby a Linalg op
+      --iree-gpu-distribute-shared-memory-copy                          -   Pass to distribute shared memory copies to threads.
+      --iree-gpu-multi-buffering                                        -   Pass to do multi buffering.
+      --iree-gpu-pipelining                                             -   Pass to do software pipelining.
+        --epilogue-peeling                                              - Try to use un-peeling epilogue when false, peeled epilouge o.w.
+      --iree-gpu-reduce-bank-conflicts                                  -   Pass to try to reduce the number of bank conflicts.
+      --iree-hal-assign-target-devices                                  -   Assigns the HAL devices the module will target to the given list of targets.
+        --targets=<string>                                              - List of devices to target.
+      --iree-hal-conversion                                             -   Convert input stream/std/etc dialects to the IREE HAL dialect.
+      --iree-hal-dump-executable-benchmarks                             -   Dumps standalone hal.executable benchmarks to a path.
+        --path=<string>                                                 - Path to write hal.executable benchmarks into.
+      --iree-hal-dump-executable-sources                                -   Dumps individual hal.executable source listings to a path.
+        --path=<string>                                                 - Path to write hal.executable source files into.
+      --iree-hal-elide-redundant-commands                               -   Elides stateful command buffer ops that set redundant state.
+      --iree-hal-fixup-legacy-sync                                      -   Applies fixups to the program for when using legacy HAL devices that only support synchronous execution
+      --iree-hal-inline-conversion                                      -   Converts from various dialects to the HAL inline dialect
+      --iree-hal-inline-device-switches                                 -   Inlines hal.device.switch condition regions
+      --iree-hal-inline-executables                                     -   Inlines translated executable functions into the host program
+      --iree-hal-link-executables                                       -   Links together hal.executables depending on target backend rules
+      --iree-hal-link-target-executables                                -   Links together hal.executables for the specified target.
+        --target=<string>                                               - Target backend name whose executables will be linked by this pass.
+      --iree-hal-loader-conversion                                      -   Converts from various dialects to the HAL loader dialect
+      --iree-hal-loader-materialize-executables                         -   Materializes executable globals and loader code
+      --iree-hal-loader-resolve-export-ordinals                         -   Resolves dispatch operation target export entry point ordinals
+      --iree-hal-materialize-dispatch-instrumentation                   -   Materializes dispatch instrumentation resources.
+        --bufferSize=<power of two byte size>                           - Power-of-two byte size of the instrumentation buffer.
+      --iree-hal-materialize-interfaces                                 -   Materializes hal.executable ops from stream.executable ops
+      --iree-hal-materialize-resource-caches                            -   Materializes hal.executable resource caches and rewrites lookups.
+      --iree-hal-memoize-device-queries                                 -   Caches hal.device.query results for use across the entire module
+      --iree-hal-preprocess-executables                                 -   Preprocesses each executable with a pass pipeline or external tool.
+        --command=<string>                                              - Shell command used to preprocess the executable.
+        --pipeline=<string>                                             - Pass pipeline used to preprocess the executable.
+      --iree-hal-resolve-export-ordinals                                -   Resolves hal.executable.export references to ordinals
+      --iree-hal-serialize-executables                                  -   Serializes hal.executable.variant ops to hal.executable.binary ops
+      --iree-hal-serialize-target-executables                           -   Serializes hal.executable.variant ops to hal.executable.binary ops
+        --debug-level=<int>                                             - Debug level for serialization (0-3)
+        --dump-binaries-path=<string>                                   - Path to write translated and serialized executable binaries into for debugging.
+        --dump-intermediates-path=<string>                              - Path to write translated executable intermediates (.bc, .o, etc) into for debugging.
+        --target=<string>                                               - Target backend name whose executables will be serialized by this pass.
+      --iree-hal-substitute-executables                                 -   Substitutes hal.executable ops by parsing |substitutions| in `executable_name=file.xxx` strings.
+        --search-path=<string>                                          - Path to source executable substitutions from.
+        --substitutions=<string>                                        - Substitution `executable_name=file.xxx` key-value pairs.
+      --iree-hal-translate-executables                                  -   Serializes hal.executable.variant ops to hal.executable.binary ops
+      --iree-hal-translate-target-executable-variants                   -   Serializes hal.executable.variant ops to hal.executable.binary ops
+        --target=<string>                                               - Target backend name whose executables will be translated by this pass.
+      --iree-hal-verify-target-environment                              -   Verifies that the target execution environment is valid.
+      --iree-hoist-statically-bound-allocations                         -   Hoist statically bound alloca ops to the entry block of functions
+      --iree-import-ml-program                                          -   Imports MLProgram dialect to IREE Equivalents.
+      --iree-import-public                                              -   Imports IREE public dialect to internal implementation.
+      --iree-linalg-ext-convert-conv2d-to-winograd                      -   Convert linalg convolution ops to winograd based implementation
+      --iree-linalg-ext-decompose-softmax                               -   Decomposes softmax op into a sequence of linalg ops
+      --iree-linalg-ext-fold-into-pack-unpack-ops                       -   Test pass to fold operations into pack and unpacl operations
+      --iree-linalg-ext-materialize-encoding                            -   Test pass to materialize ops with tensor encoding into ops with explicit data movement
+      --iree-linalg-ext-tile                                            -   Test pass for tiling using TiledOpInterface
+      --iree-linalg-ext-tile-and-decompose-attention                    -   Tiles and decomposes attention op into a sequence of linalg ops
+      --iree-linalg-ext-tile-and-decompose-winograd                     -   Tiles and decomposes winograd transform ops into linalg ops
+      --iree-linalg-ext-to-loops                                        -   Convert LinalgExt ops to loops and Linalg ops.
+      --iree-linalg-ext-topk-split-reduction                            -   Topk split reduction pass.
+        --split-ratios=<int>                                            - List of split reduction ratios
+      --iree-linalg-pad-contraction-to-block-size                       -   Pads contraction (matmul) ops to next multiple of block size
+        --columnAlignment=<int>                                         - The column-wise output block size
+        --rowAlignment=<int>                                            - The row-wise output block size
+      --iree-linalg-quantized-conv-to-conv                              -   lower quantized_conv to conv
+      --iree-linalg-quantized-matmul-to-matmul                          -   lower quantized_matmul to matmul
+      --iree-linalg-strategy-decompose-pass                             -   Configurable pass to apply pattern-based generalization.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+      --iree-linalg-strategy-enable-pass                                -   Configurable pass to enable the application of other pattern-based linalg passes.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+      --iree-linalg-strategy-lower-vectors-pass                         -   Configurable pass to lower vector operations.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+      --iree-linalg-strategy-pad-pass                                   -   Configurable pass to apply padding and hoisting.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+        --anchor-op=<string>                                            - Which linalg op within the func is the anchor to latch on.
+      --iree-linalg-strategy-peel-pass                                  -   Configurable pass to apply pattern-based linalg peeling.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+        --anchor-op=<string>                                            - Which linalg op within the func is the anchor to latch on.
+      --iree-linalg-strategy-remove-markers-pass                        -   Cleanup pass that drops markers.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+      --iree-linalg-strategy-tile-and-fuse-pass                         -   Configurable pass to apply pattern-based tiling and fusion.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+        --anchor-op=<string>                                            - Which linalg op within the func is the anchor to latch on.
+      --iree-linalg-strategy-tile-pass                                  -   Configurable pass to apply pattern-based linalg tiling.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+        --anchor-op=<string>                                            - Which linalg op within the func is the anchor to latch on.
+      --iree-linalg-strategy-vectorize-pass                             -   Configurable pass to apply pattern-based linalg vectorization.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+        --anchor-op=<string>                                            - Which linalg op within the func is the anchor to latch on.
+        --vectorize-padding                                             - Enable vectorization of padding ops.
+      --iree-llvmcpu-assign-constant-ordinals                           -   Assigns executable constant ordinals across all LLVMCPU variants.
+      --iree-llvmcpu-assign-import-ordinals                             -   Assigns executable import ordinals across all LLVMCPU variants.
+      --iree-llvmcpu-check-ir-before-llvm-conversion                    -   Checks CPU backend specific IR constraints (like no allocas)
+      --iree-llvmcpu-emit-vectorization-remarks                         -   Emit vectorization remarks on Linalg ops
+      --iree-llvmcpu-link-executables                                   -   Links LLVMCPU HAL executables within the top-level program module.
+      --iree-llvmcpu-lower-executable-target                            -   Lower executable target using an IREE::HAL::DispatchLoweringPassPipeline
+        --test-lowering-configuration                                   - Flag used for lit-testing the default configuration set for root ops in hal.executable.variants. Defaults to false and is set to true for lit tests. Not for general usage
+        --use-lowering-pipeline=<string>                                - List of passes to be applied for lowering the hal.executable.variant. Note that this is used for all hal.executable.variants, so might be useful when there is only one such operation. The specified pass pipeline is expected to work on the std.module op within the hal.executable.variant operation
+      --iree-llvmcpu-lower-to-ukernels                                  -   Separate out parts of the IR that lower to a micro-kernel
+      --iree-llvmcpu-materialize-encoding                               -   Materialize the encoding for tensor as specified by the backend
+      --iree-llvmcpu-mmt4d-vector-lowering                              -   Apply vector lowering logic to vector ops
+      --iree-llvmcpu-synchronize-symbol-visibility                      -   Synchronizes LLVM linkage with MLIR symbol visibility
+      --iree-llvmcpu-unfuse-fma-pass                                    -   Convert llvm.fma into unfused mulf and addf ops
+      --iree-llvmcpu-vector-contract-custom-kernels                     -   Enable custom kernels (inline assembly or intrinsics) for some vector.contract ops
+      --iree-llvmcpu-verify-linalg-transform-legality                   -   Verify that only supported IR constructs are passed to the compiler.
+      --iree-llvmgpu-alloc                                              -   Pass to create allocation for some values.
+      --iree-llvmgpu-distribute                                         -   Pass to distribute scf.forall ops.
+      --iree-llvmgpu-lower-executable-target                            -   Perform lowering of executable target using one of the IREE::HAL::DispatchLoweringPassPipeline
+        --test-lowering-configuration                                   - Flag used for lit-testing the default configuration set for root ops in hal.executable.variants. Defaults to false and is set to true for lit tests. Not for general usage
+      --iree-llvmgpu-tensor-pad                                         -   Pass to pad out tensors up to static dimensions.
+      --iree-llvmgpu-tensorcore-vectorization                           -   Pass to convert linalg into Vector and transform it to a form that can be lowered to GPU MMA ops
+      --iree-llvmgpu-tile-and-distribute                                -   Pass to tile and distribute linalg ops within a workgroup.
+      --iree-llvmgpu-tile-tensor                                        -   Pass to tile linalg on tensor ops within a workgroup.
+      --iree-llvmgpu-vector-lowering                                    -   Pass to lower Vector ops before conversion to LLVM.
+      --iree-llvmgpu-vector-to-gpu                                      -   Pass to convert vector to gpu.
+      --iree-mhlo-flatten-tuples-in-cfg                                 -   Flattens tuples in a CFG form of MHLO
+      --iree-mhlo-to-linalg-ext                                         -   Convert from XLA-HLO ops to LinalgExt ops and distribute to Flow ops
+      --iree-mhlo-to-linalg-on-tensors                                  -   Convert from XLA-HLO ops to Linalg ops on tensors
+      --iree-mhlo-to-mhlo-preprocessing                                 -   Apply mhlo to mhlo transformations for some mhlo ops
+        --order-conv-features                                           - Guarantees input/output features ordered from conv kernel
+      --iree-mhlo-verify-compiler-input-legality                        -   Verifies that only supported IR constructs are passed to the compiler.
+      --iree-preprocessing-convert-conv2d-to-img2col                    -   Convert linalg convolution ops to matmul img2col based implementation
+      --iree-preprocessing-pad-linalg-ops                               -   Pad linalg ops to the next integer multiple of paddingSize.
+        --pad-size=<int>                                                - Specify the padding size
+      --iree-sanitize-module-names                                      -   Sanitizes module names for uniformity across target implementations.
+      --iree-spirv-annotate-winograd-loops                              -   Annotate innermost Winograd loops with spirv distribute attribute
+      --iree-spirv-breakdown-large-vector                               -   Break down vectors not natively supported by SPIR-V
+      --iree-spirv-create-fast-slow-path                                -   Create separate fast and slow paths to handle padding
+      --iree-spirv-distribute                                           -   Distribute tiled loop nests to invocations
+      --iree-spirv-emulate-i64                                          -   Emulate 64-bit integer opts with 32-bit integer ops
+      --iree-spirv-lower-executable-target-pass                         -   Lower the executable target to SPIR-V using one of the IREE::HAL::DispatchLoweringPassPipeline
+        --test-lowering-configuration                                   - Flag used for lit-testing the configuration set for root ops in hal.executable.variants. Defaults to false. Set to true for lit tests; not for general usage
+      --iree-spirv-map-memref-storage-class                             -   Map MemRef memory spaces to SPIR-V storage classes
+      --iree-spirv-tile                                                 -   Tile Linalg ops with tensor semantics to invocations
+      --iree-spirv-tile-and-distribute                                  -   Tile and distribute Linalg ops with buffer semantics to invocations
+      --iree-spirv-tile-and-promote                                     -   Promote tiled Linalg ops with buffer semantics to use workgroup memory and then tile to invocations
+        --promote-c                                                     - Promote C matrix to use shared memory
+        --skip-thread                                                   - Skip tiling and distributing to GPU threads
+      --iree-spirv-tile-to-cooperative-ops                              -   Tile Linalg ops with buffer semantics to subgroups and vectorize to vector ops suitable for lowering to SPIR-V cooperative ops
+      --iree-spirv-vector-to-gpu-subgroup-mma-ops                       -   Pass to convert vector ops to GPU subgroup MMA ops.
+      --iree-spirv-vectorize                                            -   Vectorize Linalg ops with buffer semantics
+      --iree-spirv-vectorize-load-store                                 -   Vectorize load/store of memrefs for better memory access
+      --iree-spirv-vectorize-to-cooperative-ops                         -   Tile Linalg ops with buffer semantics to subgroups and vectorize to vector ops suitable for lowering to SPIR-V cooperative ops
+      --iree-stream-annotate-dispatch-arguments                         -   Annotates dispatch arguments with potential values derived from dispatch sites.
+      --iree-stream-conversion                                          -   Converts from flow/std/etc dialects into the stream dialect.
+      --iree-stream-dump-statistics                                     -   Dumps stream dialect usage information to a file.
+        --output-file=<string>                                          - File path to write to; or `` for stderr or `-` for stdout.
+        --output-format=<value>                                         - Specifies the output format to produce.
+    =pretty                                                       -   Human-readable pretty printed output.
+    =verbose                                                      -   Pretty printed output with additional IR.
+    =csv                                                          -   Comma separated values.
+      --iree-stream-elide-async-copies                                  -   Elides copies when they are not performing meaningful work.
+      --iree-stream-elide-timepoints                                    -   Elides timepoints that are known to be covered by dependent timepoints.
+      --iree-stream-emplace-allocations                                 -   Emplaces transient tensor allocations to remove copies.
+      --iree-stream-encode-device-tensors                               -   Encodes tensors into binary formats based on affinity and target support.
+      --iree-stream-encode-host-tensors                                 -   Encodes tensors into binary formats based on affinity and target support.
+      --iree-stream-fold-uniform-operands                               -   Folds redundant and uniformly constant dispatch operands.
+      --iree-stream-fuse-dispatch-bindings                              -   Fuses bindings to the same underlying storage to reduce binding count.
+        --alias-mutable-bindings                                        - Fuses bindings that are mutable instead of leaving them split.
+      --iree-stream-layout-slices                                       -   Lays out packed slices and produces arithmetic required for all offsets.
+      --iree-stream-materialize-builtins                                -   Materialize stream.builtin.* executables.
+      --iree-stream-materialize-copy-on-write                           -   Materializes copy-on-write (🐄) behavior as explicit ops.
+      --iree-stream-memoize-channels                                    -   Memoizes channel creation by migrating accesses to globals.
+      --iree-stream-outline-constants                                   -   Outlines tensor constants into util.globals at the module level.
+      --iree-stream-pack-allocations                                    -   Packs fused allocations based on lifetime.
+      --iree-stream-pack-constants                                      -   Packs and allocate backing storage for fused constant resources.
+      --iree-stream-pack-dispatch-operands                              -   Packs stream dispatch operands into i32 push constants.
+      --iree-stream-propagate-timepoints                                -   Materializes timepoints and sinks them to consumers throughout the whole program.
+      --iree-stream-refine-usage                                        -   Refines resource usage bits and inserts transfers where appropriate.
+      --iree-stream-schedule-allocation                                 -   Allocates resources and converts to explicit stream commands.
+      --iree-stream-schedule-concurrency                                -   Identifies and groups asynchronous operations within executable regions that can run concurrently and groups them into streams.
+      --iree-stream-schedule-execution                                  -   Identifies and groups asynchronous operations into executable regions within function-like regions.
+      --iree-stream-specialize-dispatches                               -   Specializes executables by inlining/fusing operands based on dispatch sites.
+      --iree-stream-verify-input                                        -   Verifies that input dialects are supported by the streams dialect.
+      --iree-stream-verify-lowering-to-async                            -   Verifies that all stream.tensor.* ops and types are fully lowered to stream.async.* ops.
+      --iree-stream-verify-lowering-to-cmd                              -   Verifies that all stream.async.* ops and types are fully lowered to stream.cmd.* ops.
+      --iree-stream-verify-lowering-to-tensors                          -   Verifies that input dialects are converted to stream.tensor.* ops.
+      --iree-test-llvmgpu-legalize-ops                                  -   Test pass for several legalization patterns.
+      --iree-test-mhlo-convert-complex-to-real                          -   Test pass that does an MHLO->MHLO conversion of just complex arithmetic ops.
+      --iree-tflite-wrap-entry-points                                   -   Wraps model entry points in functions compatible with the tflite bindings
+      --iree-tm-tensor-to-linalg-ext                                    -   Convert from TMTensor ops to LinalgExt ops on tensors
+      --iree-top-level-scf-to-cfg                                       -   Converts non-nested SCF constructs to CFG (not traversing into opaque operations).
+      --iree-tosa-to-linalg-ext                                         -   Convert TOSA operations to their equivalent linalg-ext operations.
+      --iree-tosa-verify-compiler-input-legality                        -   Verifies that only supported IR constructs are passed to the compiler.
+      --iree-transform-dialect-interpreter                              -   Pass to apply transform dialect operations.
+        --debug-payload-root-tag=<string>                               - Select the operation with 'transform.iree_tag' attribute having the given value as payload IR root. This allows user control on what operation to transform in debug mode, without requiring intimate knowledge of the IREE nested pass pipeline.
+                                                                    If empty (normal operation mode), select the pass anchor operation in the IREE pipeline, as the payload IR root.
+        --debug-transform-root-tag=<string>                             - Select the operation with 'transform.iree_tag' attribute having the given value as container IR for top-level transform ops. This allows user control on what transformation to apply in debug mode, without requiring intimate knowledge of the IREE nested pass pipeline.
+                                                                    If empty (normal operation mode), select the container of the top-level transform op.
+        --transform-file-name=<string>                                  - Optional filename containing a transform dialect specification to apply. If left empty, the IR is assumed to contain one top-level transform dialect operation somewhere in the module.
+      --iree-util-apply-patterns                                        -   Applies some risky/IREE-specific canonicalization patterns.
+      --iree-util-combine-initializers                                  -   Combines global initializers into one.
+      --iree-util-demote-f32-to-f16                                     -   Demotes f32 types to f16 types.
+      --iree-util-demote-f64-to-f32                                     -   Demotes f64 types to f32 types.
+      --iree-util-demote-i64-to-i32                                     -   Demotes i64 types to i32 types.
+      --iree-util-drop-compiler-hints                                   -   Deletes operations that have no runtime equivalent.
+      --iree-util-fixed-point-iterator                                  -   Iterates a sub-pipeline to a fixed point.
+        --max-iterations=<int>                                          - Maximum number of iterations
+        --pipeline=<string>                                             - Pipeline to run to a fixed point
+      --iree-util-fold-globals                                          -   Folds duplicate globals and propagates constants.
+      --iree-util-fuse-globals                                          -   Fuses correlated globals together.
+      --iree-util-hoist-into-globals                                    -   Greedily hoists eligible constant expressions into globals.
+      --iree-util-ipo                                                   -   Performs basic inter-procedural optimization.
+      --iree-util-promote-bf16-to-f32                                   -   Promotes bf16 types to f32 types.
+      --iree-util-promote-f16-to-f32                                    -   Promotes f16 types to f32 types.
+      --iree-util-propagate-subranges                                   -   Propagates resource subranges across the program.
+      --iree-util-simplify-global-accesses                              -   Hoists loads and sinks stores to variables to decrease data dependency regions.
+      --iree-util-strip-debug-ops                                       -   Strips debug ops, like assertions.
+      --iree-util-test-conversion                                       -   Tests util dialect conversion patterns.
+        --widen-integers                                                - Tests type conversion by widening integers to i32
+      --iree-util-test-float-range-analysis                             -   Tests floating point range analysis.
+      --iree-verify-input-legality                                      -   Checks the legality of the IR at the start of IREE flow transformation pipeline.
+      --iree-vm-conversion                                              -   Converts from various dialects to the VM dialect
+      --iree-vm-deduplicate-rodata                                      -   Deduplicates vm.rodata ops in the module.
+      --iree-vm-drop-empty-module-initializers                          -   Drops __init/__deinit functions that have no ops.
+      --iree-vm-drop-excluded-exports                                   -   Deletes exports if annotated with emitc.exclude.
+      --iree-vm-global-initialization                                   -   Creates module-level global init/deinit functions
+      --iree-vm-hoist-inlined-rodata                                    -   Hoists inline vm.rodata.inline values to module-level constant storage.
+      --iree-vm-ordinal-allocation                                      -   Assigns ordinals to function and global symbols
+      --iree-vm-resolve-rodata-loads                                    -   Resolves global loads of rodata ops to direct rodata references.
+      --iree-vm-sink-defining-ops                                       -   Sinks defining ops with few uses to their use-sites.
+      --iree-vmvx-assign-constant-ordinals                              -   Assigns executable constant ordinals across all VMVX variants.
+      --iree-vmvx-conversion                                            -   Converts from various dialects to the VMVX dialect
+      --iree-vmvx-link-executables                                      -   Links VMVX HAL executables within the top-level program module.
+      --iree-vmvx-lower-linalg-microkernels                             -   Lowers linalg ops to the VMVX microkernel library
+        --warn-on-unconverted                                           - Warns on any unconverted linalg ops which remain live
+      --iree-vmvx-materialize-constants                                 -   Materializes executable constant global values
+      --iree-vmvx-materialize-encoding                                  -   Materialize the encoding for tensor as specified by the backend
+      --iree-vmvx-resolve-buffer-descriptors                            -   Resolves any existing vmvx.get_buffer_descriptor ops
+        --allow-unresolved                                              - Allow unresolved descriptors (for testing)
+      --iree-wgsl-replace-push-constants                                -   Replaces push constant loads with binding loads for when using WGSL without push constant support
+      --iree-workgroup-swizzle                                          -   swizzle the workgroup ids for better cache reuse
+        --logTile=<uint>                                                - pass the tile value for unit testing
+      --linalg-bufferize                                                -   Bufferize the linalg dialect
+      --linalg-detensorize                                              -   Detensorize linalg ops
+        --aggressive-mode                                               - Detensorize all ops that qualify for detensoring along with branch operands and basic-block arguments.
+      --linalg-fold-unit-extent-dims                                    -   Remove unit-extent dimension in Linalg ops on tensors
+        --fold-one-trip-loops-only                                      - Only folds the one-trip loops from Linalg ops on tensors (for testing purposes only)
+        --use-rank-reducing-slices                                      - Generate rank-reducing slices instead of reassociative reshapes
+      --linalg-fuse                                                     -   Pass to tile and fuse linalg operations.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+        --anchor-op=<string>                                            - Which linalg op within the func is the anchor to latch on.
+        --hoist-paddings=<long>                                         - Hoist padding depths.
+        --pack-paddings=<long>                                          - Operand packing flags.
+        --pad                                                           - Pad the anchor op operands.
+        --pad-parallel-dims                                             - Pad all the parallel dims for the anchor op operands.
+        --pad-reduction-dims                                            - Pad all the reduction dims for the anchor op operands.
+        --padding-dimensions=<long>                                     - Operation iterator dimensions to pad.llvm::cl::ZeroOrMore
+        --padding-values=<string>                                       - Operand padding values.llvm::cl::ZeroOrMore
+        --set-anchor-op-to-root-op                                      - Set anchor op to root op
+        --tile-interchange=<long>                                       - Tile loop interchange
+        --tile-sizes=<long>                                             - Tile sizes
+        --tiling-level=<long>                                           - Use default tiling level used to retrieve the configuration from lowering_config
+        --transpose-paddings=<string>                                   - Transpose paddings.
+        --vectorize                                                     - Rewrite the linalg op as a vector operation.
+        --vectorize-padding                                             - Rewrite all tensor.pad ops in the function to vector form.
+      --linalg-fuse-elementwise-ops                                     -   Fuse elementwise operations on tensors
+      --linalg-generalize-named-ops                                     -   Convert named ops into generic ops
+      --linalg-inline-scalar-operands                                   -   Inline scalar operands into linalg generic ops
+      --linalg-named-op-conversion                                      -   Convert from one named linalg op to another.
+      --linalg-single-tiling-expert-driver                              -   Pass to drive transformations on Linalg on tensors.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+        --anchor-op=<string>                                            - Which linalg op within the func is the anchor to latch on.
+        --decompose-to-lower-dim                                        - Convert named operations to lower-D named operations.
+        --generalize                                                    - Convert named operations to their generic form.
+        --hoist-paddings=<long>                                         - Hoist padding depths.
+        --iterator-interchange=<long>                                   - Interator interchange.
+        --pack-paddings=<long>                                          - Operand packing flags.
+        --pad                                                           - Pad the anchor op operands.
+        --padding-values=<string>                                       - Operand padding values.llvm::cl::ZeroOrMore
+        --peel                                                          - Peel loops enclosing the linalg op.
+        --tile-interchange=<long>                                       - Tile loop interchange
+        --tile-sizes=<long>                                             - Tile sizes
+        --tiling-level=<long>                                           - Use default tiling level used to retrieve the configuration from lowering_config
+        --transpose-paddings=<string>                                   - Transpose paddings.
+        --vectorize                                                     - Rewrite the linalg op as a vector operation.
+        --vectorize-padding                                             - Rewrite all tensor.pad ops in the function to vector form.
+      --linalg-split-reduction                                          -   Pass to splitReduce linalg operations.
+        --size=<long>                                                   - Size that splitReduction should use for parallel reduction results.
+      --linalg-vector-lowering                                          -   Run transformations that lower high-level vectors.
+        --lower-vector-contraction-to=<string>                          - Lower vector.contract to finer-grained vector ops, options are:
+                                                                    	outerproduct [default]
+                                                                    	dot
+                                                                    	matrixintrinsics
+        --lower-vector-multi-reduction-to=<string>                      - Lower vector.multi_reduction to finer-grained vector ops, options are:
+                                                                    	innerparallel [default]
+                                                                    	innerreduction
+        --lower-vector-stage=<int>                                      - Which stage of vector lowering to run:
+                                                                    	0 [default] only lower vector.contract
+                                                                    	1 additionally lower vector.multi_reduction
+                                                                    	2 additionally enable vector.transfer split
+                                                                    	3 additionally lower vector.transfer
+                                                                    	4 additionally lower vector.transfer to scf
+                                                                    	5 additionally lower vector.shape_cast
+                                                                    	6 additionally lower vector.transpose
+        --lower-vector-transpose-to=<string>                            - Lower vector.transpose to finer-grained vector ops, options are:
+                                                                    	eltwise [default]
+                                                                    	flat_transpose (requires LLVM matrix intrinsics support)
+                                                                    	shuffle (lower 2-D transposes to shape_cast + shuffle)
+        --lower-vector-transpose-to-avx2                                - Add specific transpose to avx2 lowering patterns.
+        --max-transfer-rank=<long>                                      - Set the maximum vector load/store rank.
+        --split-transfers=<string>                                      - Split vector transfers between slow (masked) and fast (unmasked) variants. Possible options are:
+                                                                    	none [default]: keep unsplit vector.transfer and pay the price
+                                                                    	linalg-copy: use linalg.fill + linalg.generic for the slow path
+                                                                    	vector-transfers: use extra small unmasked vector.transfers for the slow path
+        --unroll-vector-transfers                                       - Run transformations that lower high-level vectors.
+      --loop-invariant-code-motion                                      -   Hoist loop invariant instructions outside of the loop
+      --lower-affine                                                    -   Lower Affine operations to a combination of Standard and SCF operations
+      --memref-emulate-wide-int                                         -   Emulate 2*N-bit integer operations using N-bit operations
+        --widest-int-supported=<uint>                                   - Widest integer type supported by the target
+      --memref-expand                                                   -   Legalize memref operations to be convertible to LLVM.
+      --normalize-memrefs                                               -   Normalize memrefs
+      --outline-one-parent-loop                                         -   Pass to outline the k^th parent loop of an op.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+        --anchor-op=<string>                                            - Which unique op within the func is the anchor to latch on.
+        --parent-loop-num=<uint>                                        - Number of the parent loop to latch on.
+        --result-func-name=<string>                                     - Name of the func op produced by outlining.
+      --outline-shape-computation                                       -   Using shape.func to preserve shape computation
+      --print-op-stats                                                  -   Print statistics of operations
+        --json                                                          - print the stats as JSON
+      --reconcile-unrealized-casts                                      -   Simplify and eliminate unrealized conversion casts
+      --remove-shape-constraints                                        -   Replace all cstr_ ops with a true witness
+      --resolve-ranked-shaped-type-result-dims                          -   Resolve memref.dim of result values of ranked shape type
+      --resolve-shaped-type-result-dims                                 -   Resolve memref.dim of result values
+      --scf-parallel-loop-collapsing                                    -   Collapse parallel loops to use less induction variables
+        --collapsed-indices-0=<uint>                                    - Which loop indices to combine 0th loop index
+        --collapsed-indices-1=<uint>                                    - Which loop indices to combine into the position 1 loop index
+        --collapsed-indices-2=<uint>                                    - Which loop indices to combine into the position 2 loop index
+      --scf-parallel-loop-fusion                                        -   Fuse adjacent parallel loops
+      --scf-parallel-loop-tiling                                        -   Tile parallel loops
+        --no-min-max-bounds                                             - Perform tiling with fixed upper bound with inbound check inside the internal loops
+        --parallel-loop-tile-sizes=<long>                               - Factors to tile parallel loops by
+      --shape-bufferize                                                 -   Bufferize the shape dialect.
+      --shape-to-shape-lowering                                         -   Legalize Shape dialect to be convertible to Arith
+      --snapshot-op-locations                                           -   Generate new locations from the current IR
+        --filename=<string>                                             - The filename to print the generated IR
+        --tag=<string>                                                  - A tag to use when fusing the new locations with the original. If unset, the locations are replaced.
+      --spirv-lower-abi-attrs                                           -   Decorate SPIR-V composite type with layout info
+      --strip-debuginfo                                                 -   Strip debug info from all operations
+      --symbol-dce                                                      -   Eliminate dead symbols
+      --test-iree-convert-std-to-vm                                     -   Convert Standard Ops to the IREE VM dialect
+      --test-iree-hal-benchmark-batch-dispatches-2-times                -   Test pass used for benchmarking batch dispatches analysis
+      --test-iree-vm-register-allocation                                -   Test pass used for register allocation
+      --test-iree-vm-value-liveness                                     -   Test pass used for liveness analysis
+      --tosa-to-arith                                                   -   Lower TOSA to the Arith dialect
+        --include-apply-rescale                                         - Whether to include the lowering for tosa.apply_rescale to arith
+        --use-32-bit                                                    - Whether to prioritze lowering to 32-bit operations
+      --tosa-to-linalg                                                  -   Lower TOSA to LinAlg on tensors
+      --tosa-to-tensor                                                  -   Lower TOSA to the Tensor dialect
+      --transform-dialect-drop-schedule                                 -   Drop the schedule from the operation
+      --unroll-one-parent-loop                                          -   Pass to unroll the k^th parent loop of an op by some amount.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+        --anchor-op=<string>                                            - Which unique op within the func is the anchor to latch on.
+        --parent-loop-num=<uint>                                        - Number of the parent loop to latch on.
+        --unroll-factor=<uint>                                          - Unroll factor.
+      --unroll-one-vector-op                                            -   Pass to unroll a vector op to a target size.
+        --anchor-func=<string>                                          - Which func op is the anchor to latch on.
+        --anchor-op=<string>                                            - Which unique op within the func is the anchor to latch on.
+        --source-shape=<long>                                           - Source vector shape
+        --target-shape=<long>                                           - Target vector shape
+      --view-op-graph                                                   -   Print Graphviz visualization of an operation
+        --max-label-len=<uint>                                          - Limit attribute/type length to number of chars
+        --print-attrs                                                   - Print attributes of operations
+        --print-control-flow-edges                                      - Print control flow edges
+        --print-data-flow-edges                                         - Print data flow edges
+        --print-result-types                                            - Print result types of operations
+    Pass Pipelines:
+      --iree-abi-transformation-pipeline                                -   Runs the IREE native ABI bindings support pipeline
+        --invocation-model=<value>                                      - Specifies the execution model used for invocations.
+    =sync                                                         -   Fully synchronous behavior with no fences.
+    =coarse-fences                                                -   Exposes one wait fence for all inputs and one signal fence for all outputs.
+      --iree-codegen-linalg-to-llvm-pipeline                            -   Runs the progressive lowering pipeline from Linalg to LLVM
+      --iree-codegen-linalg-to-nvvm-pipeline                            -   Runs the progressive lowering pipeline from Linalg to NVVM
+      --iree-codegen-linalg-to-rocdl-pipeline                           -   Runs the progressive lowering pipeline from Linalg to ROCDL
+      --iree-codegen-linalg-to-spirv-pipeline                           -   Runs the progressive lowering pipeline from linalg to SPIR-V
+      --iree-codegen-llvmcpu-linking-pipeline                           -   Runs the LLVMCPU HAL executable linking pipeline
+      --iree-codegen-vmvx-linking-pipeline                              -   Runs the VMVX HAL executable linking pipeline
+      --iree-common-input-transformation-pipeline                       -   Runs the common input transformation pipeline
+      --iree-flow-transformation-pipeline                               -   Runs the full IREE flow dialect transformation pipeline
+      --iree-hal-configuration-pipeline                                 -   Runs the IREE HAL dialect configuration pipeline
+      --iree-hal-inline-dynamic-transformation-pipeline                 -   Runs the inline HAL executable loader dialect transformation pipeline
+      --iree-hal-inline-static-transformation-pipeline                  -   Runs the inline HAL dialect transformation pipeline
+      --iree-hal-transformation-pipeline                                -   Runs the full IREE HAL dialect transformation pipeline
+        --link-executables                                              - Whether to link hal.executable ops together.
+        --serialize-executables                                         - Whether to serialize hal.executable.variant ops to hal.executable.binary ops.
+      --iree-mhlo-input-transformation-pipeline                         -   Runs the MHLO IREE flow dialect transformation pipeline
+      --iree-mhlo-xla-cleanup-pipeline                                  -   Runs the post-XLA import cleanup pipeline
+      --iree-stream-async-transformation-pipeline                       -   Lowers stream.tensor.* to stream.async.* IR.
+        --dump-statistics-file=<string>                                 - File path to write to; or `` for stderr or `-` for stdout.
+        --dump-statistics-format=<value>                                - Dumps statistics in the specified output format.
+    =pretty                                                       -   Human-readable pretty printed output.
+    =verbose                                                      -   Pretty printed output with additional IR.
+    =csv                                                          -   Comma separated values.
+        --optimize-bindings                                             - Enables binding fusion and dispatch site specialization.
+      --iree-stream-cmd-transformation-pipeline                         -   Lowers stream.async.* to stream.cmd.* IR.
+        --dump-statistics-file=<string>                                 - File path to write to; or `` for stderr or `-` for stdout.
+        --dump-statistics-format=<value>                                - Dumps statistics in the specified output format.
+    =pretty                                                       -   Human-readable pretty printed output.
+    =verbose                                                      -   Pretty printed output with additional IR.
+    =csv                                                          -   Comma separated values.
+        --optimize-bindings                                             - Enables binding fusion and dispatch site specialization.
+      --iree-stream-optimization-pipeline                               -   Optimizes stream commands and resources (may be required for some targets).
+        --dump-statistics-file=<string>                                 - File path to write to; or `` for stderr or `-` for stdout.
+        --dump-statistics-format=<value>                                - Dumps statistics in the specified output format.
+    =pretty                                                       -   Human-readable pretty printed output.
+    =verbose                                                      -   Pretty printed output with additional IR.
+    =csv                                                          -   Comma separated values.
+        --optimize-bindings                                             - Enables binding fusion and dispatch site specialization.
+      --iree-stream-tensor-transformation-pipeline                      -   Lowers source dialects into stream.tensor.* IR.
+        --dump-statistics-file=<string>                                 - File path to write to; or `` for stderr or `-` for stdout.
+        --dump-statistics-format=<value>                                - Dumps statistics in the specified output format.
+    =pretty                                                       -   Human-readable pretty printed output.
+    =verbose                                                      -   Pretty printed output with additional IR.
+    =csv                                                          -   Comma separated values.
+        --optimize-bindings                                             - Enables binding fusion and dispatch site specialization.
+      --iree-stream-transformation-pipeline                             -   Runs the full IREE stream dialect transformation pipeline.
+        --dump-statistics-file=<string>                                 - File path to write to; or `` for stderr or `-` for stdout.
+        --dump-statistics-format=<value>                                - Dumps statistics in the specified output format.
+    =pretty                                                       -   Human-readable pretty printed output.
+    =verbose                                                      -   Pretty printed output with additional IR.
+    =csv                                                          -   Comma separated values.
+        --optimize-bindings                                             - Enables binding fusion and dispatch site specialization.
+      --iree-tflite-transform-pipeline                                  -   Runs the TFLite bindings support pipeline
+      --iree-tosa-input-transformation-pipeline                         -   Runs the TOSA IREE flow dialect transformation pipeline
+      --iree-transformation-pipeline                                    -   Runs the full IREE input to VM transformation pipeline
+      --iree-vm-transformation-pipeline                                 -   Runs the full IREE VM dialect transformation pipeline
+      --iree-vmvx-transformation-pipeline                               -   Runs the full IREE VMVX dialect transformation pipeline
+  --iree-llvmcpu-reassociate-fp-reductions                              - Enables reassociation for FP reductions
+  --iree-llvmcpu-stack-allocation-limit=<int>                           - maximum allowed stack allocation size in bytes
+  --iree-mhlo-demote-f64-to-f32                                         - Converts all MHLO f64 ops and values into f32 counterparts.
+  --iree-mhlo-demote-i64-to-i32                                         - Converts all MHLO i64 ops and values into i32 counterparts.
+  --iree-mhlo-promote-bf16-to-f32                                       - Converts all MHLO bf16 ops and values into f32 counterparts.
+  --iree-spirv-index-bits=<int>                                         - Set the bit width of indices in SPIR-V.
+  --iree-stream-partitioning-favor=<value>                              - Default stream partitioning favor configuration.
+    =debug                                                              -   Force debug partitioning (no concurrency or pipelining).
+    =min-peak-memory                                                    -   Favor minimizing memory consumption at the cost of additional concurrency.
+    =max-concurrency                                                    -   Favor maximizing concurrency at the cost of additional memory consumption.
+  --iree-stream-resource-index-bits=<uint>                              - Bit width of indices used to reference resource offsets.
+  --iree-stream-resource-max-allocation-size=<ulong>                    - Maximum size of an individual memory allocation.
+  --iree-stream-resource-max-range=<ulong>                              - Maximum range of a resource binding; may be less than the max allocation size.
+  --iree-stream-resource-min-offset-alignment=<ulong>                   - Minimum required alignment in bytes for resource offsets.
+  --iree-util-zero-fill-elided-attrs                                    - Fills elided attributes with zeros when serializing.
+  --iree-vm-c-module-optimize                                           - Optimizes the VM module with CSE/inlining/etc prior to serialization
+  --iree-vm-c-module-output-format=<value>                              - Output format used to write the C module
+    =code                                                               -   C Code file
+    =mlir-text                                                          -   MLIR module file in the VM and EmitC dialects
+  --iree-vm-c-module-strip-debug-ops                                    - Strips debug-only ops from the module
+  --iree-vmvx-enable-microkernels                                       - Enables microkernel lowering for vmvx (experimental)
+  --iree-vmvx-enable-microkernels-decompose-linalg-generic              - Enables decomposition of linalg.generic ops when microkernels are enabled (experimental)
+  --iree-vulkan-target-env=<string>                                     - Vulkan target environment as #vk.target_env attribute assembly
+  --iree-vulkan-target-triple=<string>                                  - Vulkan target triple
+  --iterative-counter-promotion                                         - Allow counter promotion across the whole loop nest.
+  --load=<pluginfilename>                                               - Load the specified plugin
+  --lto-embed-bitcode=<value>                                           - Embed LLVM bitcode in object files produced by LTO
+    =none                                                               -   Do not embed
+    =optimized                                                          -   Embed after all optimization passes
+    =post-merge-pre-opt                                                 -   Embed post merge, but before optimizations
+  --matrix-default-layout=<value>                                       - Sets the default matrix layout
+    =column-major                                                       -   Use column-major layout
+    =row-major                                                          -   Use row-major layout
+  --matrix-print-after-transpose-opt                                    - 
+  --max-counter-promotions=<int>                                        - Max number of allowed counter promotions
+  --max-counter-promotions-per-loop=<uint>                              - Max number counter promotions per loop to avoid increasing register pressure too much
+  --mir-strip-debugify-only                                             - Should mir-strip-debug only strip debug info from debugified modules by default
+  --misexpect-tolerance=<uint>                                          - Prevents emiting diagnostics when profile counts are within N% of the threshold..
+  --mlir-disable-threading                                              - Disable multi-threading within MLIR, overrides any further call to MLIRContext::enableMultiThreading()
+  --mlir-elide-elementsattrs-if-larger=<uint>                           - Elide ElementsAttrs with "..." that have more elements than the given upper limit
+  --mlir-pass-pipeline-crash-reproducer=<string>                        - Generate a .mlir reproducer file at the given output path if the pass manager crashes or fails
+  --mlir-pass-pipeline-local-reproducer                                 - When generating a crash reproducer, attempt to generated a reproducer with the smallest pipeline.
+  --mlir-pass-statistics                                                - Display the statistics of each pass
+  --mlir-pass-statistics-display=<value>                                - Display method for pass statistics
+    =list                                                               -   display the results in a merged list sorted by pass name
+    =pipeline                                                           -   display the results with a nested pipeline view
+  --mlir-pretty-debuginfo                                               - Print pretty debug info in MLIR output
+  --mlir-print-debuginfo                                                - Print debug info in MLIR output
+  --mlir-print-elementsattrs-with-hex-if-larger=<long>                  - Print DenseElementsAttrs with a hex string that have more elements than the given upper limit (use -1 to disable)
+  --mlir-print-ir-after=<pass-arg>                                      - Print IR after specified passes
+  --mlir-print-ir-after-all                                             - Print IR after each pass
+  --mlir-print-ir-after-change                                          - When printing the IR after a pass, only print if the IR changed
+  --mlir-print-ir-after-failure                                         - When printing the IR after a pass, only print if the pass failed
+  --mlir-print-ir-before=<pass-arg>                                     - Print IR before specified passes
+  --mlir-print-ir-before-all                                            - Print IR before each pass
+  --mlir-print-ir-module-scope                                          - When printing IR for print-ir-[before|after]{-all} always print the top-level operation
+  --mlir-print-local-scope                                              - Print with local scope and inline information (eliding aliases for attributes, types, and locations
+  --mlir-print-op-on-diagnostic                                         - When a diagnostic is emitted on an operation, also print the operation as an attached note
+  --mlir-print-stacktrace-on-diagnostic                                 - When a diagnostic is emitted, also print the stack trace as an attached note
+  --mlir-print-value-users                                              - Print users of operation results and block arguments as a comment
+  --mlir-timing                                                         - Display execution times
+  --mlir-timing-display=<value>                                         - Display method for timing data
+    =list                                                               -   display the results in a list sorted by total time
+    =tree                                                               -   display the results ina with a nested tree view
+  --no-discriminators                                                   - Disable generation of discriminator information.
+  --no-implicit-module                                                  - Disable implicit addition of a top-level module op during parsing
+  --nvptx-sched4reg                                                     - NVPTX Specific: schedule for register pressue
+  -o <filename>                                                         - Output filename
+  --opaque-pointers                                                     - Use opaque pointers
+  --pass-pipeline=<string>                                              - Textual description of the pass pipeline to run
+  --poison-checking-function-local                                      - Check that returns are non-poison (for testing)
+  --print-pipeline-passes                                               - Print a '-passes' compatible string describing the pipeline (best-effort only).
+  --runtime-counter-relocation                                          - Enable relocating counters at runtime.
+  --safepoint-ir-verifier-print-only                                    - 
+  --sample-profile-check-record-coverage=<N>                            - Emit a warning if less than N% of records in the input profile are matched to the IR.
+  --sample-profile-check-sample-coverage=<N>                            - Emit a warning if less than N% of samples in the input profile are matched to the IR.
+  --sample-profile-max-propagate-iterations=<uint>                      - Maximum number of iterations to go through when propagating sample block/edge weights through the CFG.
+  --show-dialects                                                       - Print the list of registered dialects
+  --skip-ret-exit-block                                                 - Suppress counter promotion if exit blocks contain ret.
+  --speculative-counter-promotion-max-exiting=<uint>                    - The max number of exiting blocks of a loop to allow  speculative counter promotion
+  --speculative-counter-promotion-to-loop                               - When the option is false, if the target block is in a loop, the promotion will be disallowed unless the promoted counter  update can be further/iteratively promoted into an acyclic  region.
+  --split-input-file                                                    - Split the input file into pieces and process each chunk independently
+  --summary-file=<string>                                               - The summary file to use for function importing.
+  --sve-tail-folding=<string>                                           - Control the use of vectorisation using tail-folding for SVE:
+                                                                          disabled    No loop types will vectorize using tail-folding
+                                                                          default     Uses the default tail-folding settings for the target CPU
+                                                                          all         All legal loop types will vectorize using tail-folding
+                                                                          simple      Use tail-folding for simple loops (not reductions or recurrences)
+                                                                          reductions  Use tail-folding for loops containing reductions
+                                                                          recurrences Use tail-folding for loops containing fixed order recurrences
+  --tail-predication=<value>                                            - MVE tail-predication pass options
+    =disabled                                                           -   Don't tail-predicate loops
+    =enabled-no-reductions                                              -   Enable tail-predication, but not for reduction loops
+    =enabled                                                            -   Enable tail-predication, including reduction loops
+    =force-enabled-no-reductions                                        -   Enable tail-predication, but not for reduction loops, and force this which might be unsafe
+    =force-enabled                                                      -   Enable tail-predication, including reduction loops, and force this which might be unsafe
+  --thinlto-assume-merged                                               - Assume the input has already undergone ThinLTO function importing and the other pre-optimization pipeline changes.
+  --type-based-intrinsic-cost                                           - Calculate intrinsics cost based only on argument types
+  --verify-diagnostics                                                  - Check that emitted diagnostics match expected-* lines on the corresponding line
+  --verify-each                                                         - Run the verifier after each transformation pass
+  --verify-region-info                                                  - Verify region info (time consuming)
+  --vp-counters-per-site=<number>                                       - The average number of profile counters allocated per value profiling site.
+  --vp-static-alloc                                                     - Do static counter allocation for value profiler
+  --wasm-enable-eh                                                      - WebAssembly exception handling
+  --wasm-enable-sjlj                                                    - WebAssembly setjmp/longjmp handling
+  --x86-align-branch=<string>                                           - Specify types of branches to align (plus separated list of types):
+                                                                          jcc      indicates conditional jumps
+                                                                          fused    indicates fused conditional jumps
+                                                                          jmp      indicates direct unconditional jumps
+                                                                          call     indicates direct and indirect calls
+                                                                          ret      indicates rets
+                                                                          indirect indicates indirect unconditional jumps
+  --x86-align-branch-boundary=<uint>                                    - Control how the assembler should align branches with NOP. If the boundary's size is not 0, it should be a power of 2 and no less than 32. Branches will be aligned to prevent from being across or against the boundary of specified size. The default value 0 does not align branches.
+  --x86-branches-within-32B-boundaries                                  - Align selected instructions to mitigate negative performance impact of Intel's micro code update for errata skx102.  May break assumptions about labels corresponding to particular instructions, and should be used with caution.
+  --x86-pad-max-prefix-size=<uint>                                      - Maximum number of prefixes to use for padding
+
+Generic Options:
+
+  --help                                                                - Display available options (--help-hidden for more)
+  --help-list                                                           - Display list of available options (--help-list-hidden for more)
+  --version                                                             - Display the version of this program
+
+IREE HAL executable target options:
+
+  --iree-hal-dump-executable-benchmarks-to=<string>                     - Path to write standalone hal.executable benchmarks into (- for stdout).
+  --iree-hal-dump-executable-binaries-to=<string>                       - Path to write translated and serialized executable binaries into.
+  --iree-hal-dump-executable-intermediates-to=<string>                  - Path to write translated executable intermediates (.bc, .o, etc) into.
+  --iree-hal-dump-executable-sources-to=<string>                        - Path to write individual hal.executable input source listings into (- for stdout).
+  --iree-hal-executable-debug-level=<int>                               - Debug level for executable translation (0-3)
+  --iree-hal-target-backends=<string>                                   - Target backends for executable compilation.
+
+IREE VM target options:
+
+  --iree-vm-target-extension-f32                                        - Support f32 target opcode extensions.
+  --iree-vm-target-extension-f64                                        - Support f64 target opcode extensions.
+  --iree-vm-target-index-bits=<int>                                     - Bit width of index types.
+  --iree-vm-target-optimize-for-stack-size                              - Prefer optimizations that reduce VM stack usage over performance.
+  --iree-vm-target-truncate-unsupported-floats                          - Truncate f64 to f32 when unsupported.

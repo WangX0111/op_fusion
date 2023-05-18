@@ -3,7 +3,8 @@
 set(LLVM_TARGET_DEFINITIONS Passes.td)
 mlir_tablegen(Passes.h.inc -gen-pass-decls)
 add_public_tablegen_target(CatherineTransformsIncGen)
-
+add_subdirectory(ONNX)
+add_subdirectory(fusion)
 
 add_mlir_library(CatherineTransforms
 
@@ -13,8 +14,10 @@ add_mlir_library(CatherineTransforms
   DEPENDS
   CatherineTransformsIncGen
 
+
   LINK_LIBS PUBLIC
   CatherineHLS
+  CatherineFusion
 
 #   LINK_LIBS PUBLIC
 #   # MLIRAffine

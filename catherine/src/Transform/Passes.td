@@ -28,9 +28,30 @@ include "mlir/Pass/PassBase.td"
 //   ];
 // }
 
+def FusionPass : Pass<"fusion"> {
+  let summary = "fusion pass";
+  let constructor = "mlir::catherine::createFusionPass()";
+  let options = [
+    Option<"gpu_enabled_", "gpu-enabled", "bool",
+              /*default=*/"true", "whether gpu is available.">,
+        Option<"fusion_strategy_", "fusion-strategy", "std::string",
+              /*default=*/"\"base\"", "Name of the fusion strategy.">,
 
+  ];
+}
 
-def Estimation : Pass<"estimation", "mlir::ModuleOp"> {
+def DiscFusionPass : Pass<"disc-fusion", "::mlir::func::FuncOp"> {
+  let summary = "Fuse lmhlo ops to kLoop/kInput fusion patterns.";
+  let constructor = "mlir::catherine::createDiscFusionPass()";
+  let options = [
+    Option<"gpu_enabled_", "gpu-enabled", "bool",
+           /*default=*/"true", "whether gpu is available.">,
+    Option<"fusion_strategy_", "fusion-strategy", "std::string",
+           /*default=*/"\"base\"", "Name of the fusion strategy.">,
+  ];
+}
+
+def Estimation : Pass<"estimation", "::mlir::ModuleOp"> {
   let summary = "Estimate the performance and resource utilization";
   let description = [{
     This pass will analyze the input IR and estimate the latency and resource

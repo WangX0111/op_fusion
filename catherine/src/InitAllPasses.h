@@ -16,7 +16,7 @@ namespace catherine {
 
 // Add all the ScaleHLS passes.
 inline void registerAllPasses() {
-  catherine::registerTransformsPasses();
+  mlir::catherine::registerTransformsPasses();
   mlir::registerAllPasses();
 }
 

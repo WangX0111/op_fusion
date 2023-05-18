@@ -58,6 +58,7 @@ message(STATUS "CMAKE_CURRENT_BINARY_DIR in: ${CMAKE_CURRENT_BINARY_DIR}")
 
 # Add PROJECT files to the include path
 # include_directories(${PROJECT_MAIN_INCLUDE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/)
 include_directories(${PROJECT_INCLUDE_DIR}/)
 include_directories(${PROJECT_INCLUDE_DIR}/Pass)
 include_directories(${PROJECT_INCLUDE_DIR}/Dialect)
@@ -82,8 +83,9 @@ add_definitions(${LLVM_DEFINITIONS})
 #-------------------------------------------------------------------------------
 # third party
 #-------------------------------------------------------------------------------
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/onnx-mlir/include)
-link_directories(${CMAKE_CURRENT_BINARY_DIR}/third_party/onnx-mlir)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/onnx-mlir)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/third_party/onnx-mlir)
+# link_directories(${CMAKE_CURRENT_BINARY_DIR}/third_party)
 
 
 #-------------------------------------------------------------------------------
@@ -131,7 +133,7 @@ endif()
 #-------------------------------------------------------------------------------
 # Directory setup
 #-------------------------------------------------------------------------------
-# add_subdirectory(third_party/onnx-mlir)
+add_subdirectory(third_party/onnx-mlir)
 # add_subdirectory(cmake)
 # add_subdirectory(include)
 # add_subdirectory(lib)

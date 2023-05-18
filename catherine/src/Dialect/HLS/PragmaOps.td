@@ -32,7 +32,6 @@ def ApplyPragmasOp : HLSOp<"apply_pragmas", [
   let skipDefaultBuilders = 1;
   let builders = [
     OpBuilder<(ins), "build($_builder, $_state);">
-
     ];
 
   // TODO: verifier for this op:
